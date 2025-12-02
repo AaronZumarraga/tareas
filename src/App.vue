@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+
+const isMenuOpen = ref(false)
+
+const toggleMenu = () => {
+  isMenuOpen.value = !isMenuOpen.value
+}
 </script>
 
 <template>
@@ -7,7 +14,10 @@ import { RouterLink, RouterView } from 'vue-router'
     <header>
       <div class="container">
         <h1 class="logo">TaskManager</h1>
-        <nav>
+        <button class="hamburger" @click="toggleMenu">
+          <span :class="{'open': isMenuOpen}">☰</span>
+        </button>
+        <nav :class="{ 'open': isMenuOpen }">
           <RouterLink to="/" class="nav-link">Inicio</RouterLink>
           <RouterLink to="/tareas" class="nav-link">Tareas</RouterLink>
           <RouterLink to="/acerca-de" class="nav-link">Acerca de</RouterLink>
@@ -71,9 +81,22 @@ header .container {
   font-weight: 600;
 }
 
+.hamburger {
+  display: none; /* Hidden by default */
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
 nav {
   display: flex;
   gap: 8px;
+}
+
+nav.open {
+  display: flex; /* Show menu when open */
+  flex-direction: column; /* Stack items vertically */
 }
 
 .nav-link {
@@ -99,5 +122,21 @@ nav {
 main {
   flex: 1;
   padding: 40px 20px;
+}
+
+@media (max-width: 768px) {
+  .hamburger {
+    display: block; /* Show hamburger on small screens */
+  }
+
+  nav {
+    display: none; /* Hide nav by default on small screens */
+    position: absolute;
+    top: 60px; /* Adjust based on header height */
+    left: 0;
+    right: 0;
+    background: white;
+    z-index: 10;
+  }
 }
 </style>
