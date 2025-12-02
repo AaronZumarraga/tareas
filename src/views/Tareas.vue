@@ -5,6 +5,8 @@ import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
+import TasksStats from '../components/TasksStats.vue'
+import TasksFilters from '../components/TasksFilters.vue'
 
 interface Task {
   id: number
@@ -63,50 +65,21 @@ const tasksStats = computed(() => ({
   <div class="tareas">
     <GlassCard max-width="800px" text-align="left">
       <PageTitle title="Mis Tareas" subtitle="Organiza tu día de forma efectiva" />
-      
       <TaskInput @add-task="handleAddTask" />
-      
-      <!-- Stats Bar -->
-      <div class="stats-bar" v-if="tasks.length > 0">
-        <div class="stat-item">
-          <span class="stat-number">{{ tasksStats.total }}</span>
-          <span class="stat-label">Total</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number active">{{ tasksStats.active }}</span>
-          <span class="stat-label">Activas</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-number completed">{{ tasksStats.completed }}</span>
-          <span class="stat-label">Completadas</span>
-        </div>
-      </div>
-      
-      <!-- Filters -->
-      <div class="filters" v-if="tasks.length > 0">
-        <button 
-          class="filter-btn"
-          :class="{ active: filter === 'all' }"
-          @click="filter = 'all'"
-        >
-          Todas
-        </button>
-        <button 
-          class="filter-btn"
-          :class="{ active: filter === 'active' }"
-          @click="filter = 'active'"
-        >
-          Activas
-        </button>
-        <button 
-          class="filter-btn"
-          :class="{ active: filter === 'completed' }"
-          @click="filter = 'completed'"
-        >
-          Completadas
-        </button>
-      </div>
-      
+
+      <TasksStats
+        v-if="tasks.length > 0"
+        :total="tasksStats.total"
+        :active="tasksStats.active"
+        :completed="tasksStats.completed"
+      />
+
+      <TasksFilters
+        v-if="tasks.length > 0"
+        :model-value="filter"
+        @update:modelValue="filter = $event"
+      />
+
       <!-- Task List -->
       <div class="task-list">
         <TransitionGroup name="list">
@@ -121,13 +94,13 @@ const tasksStats = computed(() => ({
             @edit="handleEditTask"
           />
         </TransitionGroup>
-        
+
         <div v-if="tasks.length === 0" class="empty-state">
           <div class="empty-icon">📝</div>
           <p class="empty-title">No hay tareas aún</p>
           <p class="empty-subtitle">Comienza agregando tu primera tarea</p>
         </div>
-        
+
         <div v-else-if="filteredTasks.length === 0" class="empty-state">
           <div class="empty-icon">🎯</div>
           <p class="empty-title">No hay tareas {{ filter === 'active' ? 'activas' : 'completadas' }}</p>
@@ -143,77 +116,6 @@ const tasksStats = computed(() => ({
   margin: 0 auto;
   padding-top: 20px;
   padding-bottom: 40px;
-}
-
-.stats-bar {
-  display: flex;
-  gap: 20px;
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(29, 78, 216, 0.05) 100%);
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-.stat-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-number {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #2563eb;
-}
-
-.stat-number.active {
-  color: #f59e0b;
-}
-
-.stat-number.completed {
-  color: #10b981;
-}
-
-.stat-label {
-  font-size: 0.85rem;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.filters {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-  padding: 8px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 12px;
-}
-
-.filter-btn {
-  flex: 1;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #64748b;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.filter-btn:hover {
-  background: rgba(37, 99, 235, 0.08);
-  color: #2563eb;
-}
-
-.filter-btn.active {
-  background: #2563eb;
-  color: white;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .task-list {
@@ -270,26 +172,5 @@ const tasksStats = computed(() => ({
     padding-bottom: 30px;
   }
   
-  .stats-bar {
-    gap: 12px;
-    padding: 16px;
-  }
-  
-  .stat-number {
-    font-size: 1.5rem;
-  }
-  
-  .stat-label {
-    font-size: 0.75rem;
-  }
-  
-  .filters {
-    gap: 6px;
-  }
-  
-  .filter-btn {
-    padding: 8px 16px;
-    font-size: 0.85rem;
-  }
 }
 </style>
