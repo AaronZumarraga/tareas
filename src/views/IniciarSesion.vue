@@ -133,7 +133,14 @@ const handleRegistroSubmit = () => {
   justify-content: center;
   align-items: flex-start;
   padding-top: 40px;
-  min-height: calc(100vh - 200px);
-  flex-direction: column; /* Changed to column for better responsiveness */
+  padding-bottom: 40px; /* Add bottom padding for footer spacing */
+  min-height: auto; /* Remove fixed min-height */
+}
+
+@media (max-width: 768px) {
+  .iniciar-sesion {
+    padding-top: 20px;
+    padding-bottom: 30px;
+  }
 }
 </style>

@@ -28,6 +28,11 @@ const toggleMenu = () => {
     <main class="container">
       <RouterView />
     </main>
+    <footer>
+      <div class="container">
+        <p>&copy; {{ new Date().getFullYear() }} TaskManager. Todos los derechos reservados.</p>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -122,6 +127,23 @@ nav.open {
 main {
   flex: 1;
   padding: 40px 20px;
+  padding-bottom: 60px; /* Increased bottom padding */
+  min-height: calc(100vh - 200px); /* Ensure minimum height */
+}
+
+footer {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.5rem 0;
+  text-align: center;
+  margin-top: auto;
+}
+
+footer p {
+  color: #64748b;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
@@ -137,6 +159,11 @@ main {
     right: 0;
     background: white;
     z-index: 10;
+  }
+
+  main {
+    padding: 20px;
+    padding-bottom: 40px;
   }
 }
 </style>
