@@ -1,23 +1,26 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\Inicio.vue -->
 <script setup lang="ts">
+import GlassCard from '../components/GlassCard.vue'
+import PageTitle from '../components/PageTitle.vue'
 </script>
 
 <template>
   <div class="inicio">
-    <div class="glass-card">
-      <h1>Bienvenido</h1>
-      <p class="subtitle">Gestiona tus tareas de forma simple</p>
+    <GlassCard max-width="600px" padding="50px 40px">
+      <PageTitle 
+        title="Bienvenido" 
+        subtitle="Gestiona tus tareas de forma simple" 
+      />
       <div class="features">
         <div class="feature-item">Simple</div>
         <div class="feature-item">Efectivo</div>
         <div class="feature-item">Rápido</div>
       </div>
-    </div>
+    </GlassCard>
   </div>
 </template>
 
 <style scoped>
-/* ESTILOS LOCALES - Solo afectan este componente */
 .inicio {
   display: flex;
   justify-content: center;
@@ -25,36 +28,11 @@
   padding-top: 60px;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
-  padding: 50px 40px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  max-width: 600px;
-  width: 100%;
-}
-
-h1 {
-  color: #1e293b;
-  font-size: 2.2rem;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.subtitle {
-  color: #64748b;
-  font-size: 1.05rem;
-  margin-bottom: 40px;
-}
-
 .features {
   display: flex;
   gap: 16px;
   justify-content: center;
+  margin-top: 40px;
 }
 
 .feature-item {

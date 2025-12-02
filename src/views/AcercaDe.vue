@@ -1,12 +1,13 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\AcercaDe.vue -->
 <script setup lang="ts">
+import GlassCard from '../components/GlassCard.vue'
+import PageTitle from '../components/PageTitle.vue'
 </script>
 
 <template>
   <div class="acerca-de">
-    <div class="glass-card">
-      <h1>Acerca de</h1>
-      <p class="subtitle">TaskManager v1.0</p>
+    <GlassCard max-width="700px">
+      <PageTitle title="Acerca de" subtitle="TaskManager v1.0" />
       <div class="info-section">
         <div class="info-item">
           <h3>Tecnologías</h3>
@@ -21,46 +22,22 @@
           <p>Gestión simple de tareas diarias</p>
         </div>
       </div>
-    </div>
+    </GlassCard>
   </div>
 </template>
 
 <style scoped>
-/* ESTILOS LOCALES - Solo para Acerca De */
 .acerca-de {
   max-width: 700px;
   margin: 0 auto;
   padding-top: 20px;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  text-align: center;
-}
-
-h1 {
-  color: #1e293b;
-  font-size: 1.9rem;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.subtitle {
-  color: #64748b;
-  font-size: 1rem;
-  margin-bottom: 40px;
-}
-
 .info-section {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  margin-top: 40px;
 }
 
 .info-item {
