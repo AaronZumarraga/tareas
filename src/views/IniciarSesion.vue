@@ -3,11 +3,38 @@
 import { ref } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
+import AuthForm from '../components/AuthForm.vue'
+import FormInput from '../components/FormInput.vue'
+import BaseButton from '../components/BaseButton.vue'
 
 const isRegistro = ref(false)
 
+// Datos del formulario de login
+const loginEmail = ref('')
+const loginPassword = ref('')
+
+// Datos del formulario de registro
+const registroNombre = ref('')
+const registroApellido = ref('')
+const registroEmail = ref('')
+const registroPassword = ref('')
+const registroPasswordConfirm = ref('')
+
 const toggleForm = () => {
   isRegistro.value = !isRegistro.value
+}
+
+const handleLoginSubmit = () => {
+  console.log('Login:', { email: loginEmail.value, password: loginPassword.value })
+}
+
+const handleRegistroSubmit = () => {
+  console.log('Registro:', {
+    nombre: registroNombre.value,
+    apellido: registroApellido.value,
+    email: registroEmail.value,
+    password: registroPassword.value
+  })
 }
 </script>
 
@@ -20,89 +47,84 @@ const toggleForm = () => {
       />
 
       <!-- Formulario de Login -->
-      <form v-if="!isRegistro" class="auth-form">
-        <div class="form-group">
-          <label for="email">Correo electrónico</label>
-          <input 
-            type="email" 
-            id="email" 
-            placeholder="tu@email.com"
-          />
-        </div>
+      <AuthForm 
+        v-if="!isRegistro" 
+        :is-registro="false"
+        @submit="handleLoginSubmit"
+        @toggle-form="toggleForm"
+      >
+        <FormInput
+          id="email"
+          v-model="loginEmail"
+          label="Correo electrónico"
+          type="email"
+          placeholder="tu@email.com"
+        />
 
-        <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input 
-            type="password" 
-            id="password" 
-            placeholder="••••••••"
-          />
-        </div>
+        <FormInput
+          id="password"
+          v-model="loginPassword"
+          label="Contraseña"
+          type="password"
+          placeholder="••••••••"
+        />
 
-        <button type="submit" class="btn-primary">Iniciar Sesión</button>
-        
-        <p class="toggle-text">
-          ¿No tienes cuenta? 
-          <a @click="toggleForm">Regístrate</a>
-        </p>
-      </form>
+        <BaseButton type="submit" variant="primary" full-width>
+          Iniciar Sesión
+        </BaseButton>
+      </AuthForm>
 
       <!-- Formulario de Registro -->
-      <form v-else class="auth-form">
+      <AuthForm 
+        v-else
+        :is-registro="true"
+        @submit="handleRegistroSubmit"
+        @toggle-form="toggleForm"
+      >
         <div class="form-row">
-          <div class="form-group">
-            <label for="nombre">Nombre</label>
-            <input 
-              type="text" 
-              id="nombre" 
-              placeholder="Juan"
-            />
-          </div>
+          <FormInput
+            id="nombre"
+            v-model="registroNombre"
+            label="Nombre"
+            placeholder="Juan"
+          />
 
-          <div class="form-group">
-            <label for="apellido">Apellido</label>
-            <input 
-              type="text" 
-              id="apellido" 
-              placeholder="Pérez"
-            />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="email-registro">Correo electrónico</label>
-          <input 
-            type="email" 
-            id="email-registro" 
-            placeholder="tu@email.com"
+          <FormInput
+            id="apellido"
+            v-model="registroApellido"
+            label="Apellido"
+            placeholder="Pérez"
           />
         </div>
 
-        <div class="form-group">
-          <label for="password-registro">Crear contraseña</label>
-          <input 
-            type="password" 
-            id="password-registro" 
-            placeholder="••••••••"
-          />
-        </div>
+        <FormInput
+          id="email-registro"
+          v-model="registroEmail"
+          label="Correo electrónico"
+          type="email"
+          placeholder="tu@email.com"
+        />
 
-        <div class="form-group">
-          <label for="password-confirm">Confirmar contraseña</label>
-          <input 
-            type="password" 
-            id="password-confirm" 
-            placeholder="••••••••"
-          />
-        </div>
+        <FormInput
+          id="password-registro"
+          v-model="registroPassword"
+          label="Crear contraseña"
+          type="password"
+          placeholder="••••••••"
+        />
 
-        <button type="submit" class="btn-primary">Crear Usuario</button>
-        
-        <p class="toggle-text">
-          ¿Ya tienes cuenta? 
-          <a @click="toggleForm">Inicia sesión</a>
-        </p>
-      </form>
+        <FormInput
+          id="password-confirm"
+          v-model="registroPasswordConfirm"
+          label="Confirmar contraseña"
+          type="password"
+          placeholder="••••••••"
+        />
+
+        <BaseButton type="submit" variant="primary" full-width>
+          Crear Usuario
+        </BaseButton>
+      </AuthForm>
     </GlassCard>
   </div>
 </template>
@@ -116,86 +138,9 @@ const toggleForm = () => {
   min-height: calc(100vh - 200px);
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 10px;
-}
-
 .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 0.7fr; /* ajusta el ancho del segundo campo (Apellido) */
   gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-}
-
-.form-group label {
-  color: #334155;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.form-group input {
-  padding: 12px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.6);
-  color: #1e293b;
-  font-size: 0.95rem;
-  outline: none;
-  transition: all 0.2s;
-}
-
-.form-group input:focus {
-  border-color: #2563eb;
-  background: white;
-}
-
-.form-group input::placeholder {
-  color: #94a3b8;
-}
-
-.btn-primary {
-  padding: 14px 24px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 10px;
-}
-
-.btn-primary:hover {
-  background: #1d4ed8;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-.toggle-text {
-  text-align: center;
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-top: 10px;
-}
-
-.toggle-text a {
-  color: #2563eb;
-  cursor: pointer;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.toggle-text a:hover {
-  text-decoration: underline;
 }
 </style>
