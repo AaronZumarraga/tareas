@@ -11,6 +11,7 @@ import { RouterLink, RouterView } from 'vue-router'
           <RouterLink to="/" class="nav-link">Inicio</RouterLink>
           <RouterLink to="/tareas" class="nav-link">Tareas</RouterLink>
           <RouterLink to="/acerca-de" class="nav-link">Acerca de</RouterLink>
+          <RouterLink to="/iniciar-sesion" class="nav-link">Iniciar Sesión</RouterLink>
         </nav>
       </div>
     </header>
