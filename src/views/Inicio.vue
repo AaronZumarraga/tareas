@@ -26,6 +26,7 @@ import PageTitle from '../components/PageTitle.vue'
   justify-content: center;
   align-items: flex-start;
   padding-top: 60px;
+  padding-bottom: 40px; /* Add bottom padding for footer spacing */
   flex-direction: column; /* Changed to column for better responsiveness */
 }
 
@@ -45,5 +46,12 @@ import PageTitle from '../components/PageTitle.vue'
   color: #475569;
   font-weight: 500;
   flex: 1 1 100px; /* Allow items to grow and shrink */
+}
+
+@media (max-width: 768px) {
+  .inicio {
+    padding-top: 40px;
+    padding-bottom: 30px;
+  }
 }
 </style>

@@ -27,6 +27,7 @@ const handleAddTask = (taskText: string) => {
   max-width: 90%; /* Adjusted for responsiveness */
   margin: 0 auto;
   padding-top: 20px;
+  padding-bottom: 40px; /* Add bottom padding for footer spacing */
 }
 
 .task-list {
@@ -39,5 +40,11 @@ const handleAddTask = (taskText: string) => {
   color: #94a3b8;
   padding: 40px 20px;
   font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .tareas {
+    padding-bottom: 30px;
+  }
 }
 </style>

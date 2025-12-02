@@ -31,6 +31,7 @@ import PageTitle from '../components/PageTitle.vue'
   max-width: 90%; /* Adjusted for responsiveness */
   margin: 0 auto;
   padding-top: 20px;
+  padding-bottom: 40px; /* Add bottom padding for footer spacing */
 }
 
 .info-section {
@@ -57,5 +58,11 @@ import PageTitle from '../components/PageTitle.vue'
 .info-item p {
   color: #64748b;
   font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .acerca-de {
+    padding-bottom: 30px;
+  }
 }
 </style>
