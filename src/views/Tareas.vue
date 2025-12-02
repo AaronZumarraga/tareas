@@ -1,22 +1,137 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\Tareas.vue -->
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import TaskInput from '../components/TaskInput.vue'
+import TaskItem from '../components/TaskItem.vue'
+
+interface Task {
+  id: number
+  text: string
+  completed: boolean
+}
+
+const tasks = ref<Task[]>([])
+const filter = ref<'all' | 'active' | 'completed'>('all')
+let nextId = 1
 
 const handleAddTask = (taskText: string) => {
-  console.log('Nueva tarea:', taskText)
-  // Aquí irá la lógica para agregar tareas
+  tasks.value.push({
+    id: nextId++,
+    text: taskText,
+    completed: false
+  })
 }
+
+const handleToggleTask = (id: number) => {
+  const task = tasks.value.find(t => t.id === id)
+  if (task) {
+    task.completed = !task.completed
+  }
+}
+
+const handleDeleteTask = (id: number) => {
+  tasks.value = tasks.value.filter(t => t.id !== id)
+}
+
+const handleEditTask = (id: number, text: string) => {
+  const task = tasks.value.find(t => t.id === id)
+  if (task) {
+    task.text = text
+  }
+}
+
+const filteredTasks = computed(() => {
+  if (filter.value === 'active') {
+    return tasks.value.filter(t => !t.completed)
+  }
+  if (filter.value === 'completed') {
+    return tasks.value.filter(t => t.completed)
+  }
+  return tasks.value
+})
+
+const tasksStats = computed(() => ({
+  total: tasks.value.length,
+  active: tasks.value.filter(t => !t.completed).length,
+  completed: tasks.value.filter(t => t.completed).length
+}))
 </script>
 
 <template>
   <div class="tareas">
-    <GlassCard max-width="700px" text-align="left">
-      <PageTitle title="Mis Tareas" subtitle="Organiza tu día" />
+    <GlassCard max-width="800px" text-align="left">
+      <PageTitle title="Mis Tareas" subtitle="Organiza tu día de forma efectiva" />
+      
       <TaskInput @add-task="handleAddTask" />
+      
+      <!-- Stats Bar -->
+      <div class="stats-bar" v-if="tasks.length > 0">
+        <div class="stat-item">
+          <span class="stat-number">{{ tasksStats.total }}</span>
+          <span class="stat-label">Total</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number active">{{ tasksStats.active }}</span>
+          <span class="stat-label">Activas</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number completed">{{ tasksStats.completed }}</span>
+          <span class="stat-label">Completadas</span>
+        </div>
+      </div>
+      
+      <!-- Filters -->
+      <div class="filters" v-if="tasks.length > 0">
+        <button 
+          class="filter-btn"
+          :class="{ active: filter === 'all' }"
+          @click="filter = 'all'"
+        >
+          Todas
+        </button>
+        <button 
+          class="filter-btn"
+          :class="{ active: filter === 'active' }"
+          @click="filter = 'active'"
+        >
+          Activas
+        </button>
+        <button 
+          class="filter-btn"
+          :class="{ active: filter === 'completed' }"
+          @click="filter = 'completed'"
+        >
+          Completadas
+        </button>
+      </div>
+      
+      <!-- Task List -->
       <div class="task-list">
-        <p class="empty-state">No hay tareas aún</p>
+        <TransitionGroup name="list">
+          <TaskItem
+            v-for="task in filteredTasks"
+            :key="task.id"
+            :id="task.id"
+            :text="task.text"
+            :completed="task.completed"
+            @toggle="handleToggleTask"
+            @delete="handleDeleteTask"
+            @edit="handleEditTask"
+          />
+        </TransitionGroup>
+        
+        <div v-if="tasks.length === 0" class="empty-state">
+          <div class="empty-icon">📝</div>
+          <p class="empty-title">No hay tareas aún</p>
+          <p class="empty-subtitle">Comienza agregando tu primera tarea</p>
+        </div>
+        
+        <div v-else-if="filteredTasks.length === 0" class="empty-state">
+          <div class="empty-icon">🎯</div>
+          <p class="empty-title">No hay tareas {{ filter === 'active' ? 'activas' : 'completadas' }}</p>
+        </div>
       </div>
     </GlassCard>
   </div>
@@ -24,27 +139,157 @@ const handleAddTask = (taskText: string) => {
 
 <style scoped>
 .tareas {
-  max-width: 90%; /* Adjusted for responsiveness */
+  max-width: 90%;
   margin: 0 auto;
   padding-top: 20px;
-  padding-bottom: 40px; /* Add bottom padding for footer spacing */
+  padding-bottom: 40px;
+}
+
+.stats-bar {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(29, 78, 216, 0.05) 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.stat-number.active {
+  color: #f59e0b;
+}
+
+.stat-number.completed {
+  color: #10b981;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563eb;
+}
+
+.filter-btn.active {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .task-list {
   min-height: 200px;
-  padding: 20px 0;
 }
 
 .empty-state {
   text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-title {
+  color: #64748b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.empty-subtitle {
   color: #94a3b8;
-  padding: 40px 20px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+}
+
+/* List Transitions */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.list-leave-active {
+  position: absolute;
+  width: calc(100% - 40px);
 }
 
 @media (max-width: 768px) {
   .tareas {
     padding-bottom: 30px;
+  }
+  
+  .stats-bar {
+    gap: 12px;
+    padding: 16px;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+  
+  .filters {
+    gap: 6px;
+  }
+  
+  .filter-btn {
+    padding: 8px 16px;
+    font-size: 0.85rem;
   }
 }
 </style>
