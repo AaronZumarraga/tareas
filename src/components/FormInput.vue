@@ -41,6 +41,7 @@ const emit = defineEmits<{
 }
 
 .form-group input {
+  width: 100%; /* Added for responsiveness */
   padding: 12px 16px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;

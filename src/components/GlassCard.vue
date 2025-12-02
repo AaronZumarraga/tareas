@@ -28,6 +28,8 @@ defineProps<{
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  width: 100%;
+  width: 100%; /* Ensure it takes full width */
+  max-width: 600px; /* Optional max width */
+  margin: auto; /* Center the card */
 }
 </style>

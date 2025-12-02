@@ -16,7 +16,7 @@ const handleSubmit = (e: Event) => {
 </script>
 
 <template>
-  <form class="auth-form" @submit="handleSubmit">
+  <form class="auth-form" @submit="handleSubmit" style="max-width: 400px; margin: auto;">
     <slot />
     
     <p class="toggle-text">
@@ -34,6 +34,7 @@ const handleSubmit = (e: Event) => {
   flex-direction: column;
   gap: 20px;
   margin-top: 10px;
+  width: 100%;
 }
 
 .toggle-text {

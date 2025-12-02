@@ -31,12 +31,13 @@ const handleAdd = () => {
 <style scoped>
 .task-input {
   display: flex;
+  flex-direction: column; /* Changed to column for better responsiveness */
   gap: 10px;
   margin-bottom: 30px;
 }
 
 .task-input input {
-  flex: 1;
+  width: 100%; /* Ensure input takes full width */
   padding: 12px 16px;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;

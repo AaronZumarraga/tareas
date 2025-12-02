@@ -18,7 +18,7 @@ defineProps<{
 
 <style scoped>
 .base-button {
-  padding: 14px 24px;
+  padding: 1rem 1.5rem; /* Changed to relative units */
   border: none;
   border-radius: 8px;
   font-size: 0.95rem;

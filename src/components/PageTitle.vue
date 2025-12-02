@@ -20,13 +20,13 @@ defineProps<{
 
 h1 {
   color: #1e293b;
-  font-size: 1.9rem;
+  font-size: 2rem; /* Adjusted for responsiveness */
   font-weight: 600;
   margin-bottom: 8px;
 }
 
 .subtitle {
   color: #64748b;
-  font-size: 1rem;
+  font-size: 1.1rem; /* Adjusted for responsiveness */
 }
 </style>
