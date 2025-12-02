@@ -28,14 +28,14 @@ import PageTitle from '../components/PageTitle.vue'
 
 <style scoped>
 .acerca-de {
-  max-width: 700px;
+  max-width: 90%; /* Adjusted for responsiveness */
   margin: 0 auto;
   padding-top: 20px;
 }
 
 .info-section {
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Changed to column for better responsiveness */
   gap: 16px;
   margin-top: 40px;
 }

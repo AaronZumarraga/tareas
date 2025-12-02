@@ -42,7 +42,7 @@ body {
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 90%; /* Adjusted for responsiveness */
   margin: 0 auto;
   padding: 0 20px;
   width: 100%;

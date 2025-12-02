@@ -24,7 +24,7 @@ const handleAddTask = (taskText: string) => {
 
 <style scoped>
 .tareas {
-  max-width: 700px;
+  max-width: 90%; /* Adjusted for responsiveness */
   margin: 0 auto;
   padding-top: 20px;
 }

@@ -134,5 +134,6 @@ const handleRegistroSubmit = () => {
   align-items: flex-start;
   padding-top: 40px;
   min-height: calc(100vh - 200px);
+  flex-direction: column; /* Changed to column for better responsiveness */
 }
 </style>

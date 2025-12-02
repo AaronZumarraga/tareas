@@ -26,10 +26,12 @@ import PageTitle from '../components/PageTitle.vue'
   justify-content: center;
   align-items: flex-start;
   padding-top: 60px;
+  flex-direction: column; /* Changed to column for better responsiveness */
 }
 
 .features {
   display: flex;
+  flex-wrap: wrap; /* Allow wrapping for smaller screens */
   gap: 16px;
   justify-content: center;
   margin-top: 40px;
@@ -42,5 +44,6 @@ import PageTitle from '../components/PageTitle.vue'
   font-size: 0.9rem;
   color: #475569;
   font-weight: 500;
+  flex: 1 1 100px; /* Allow items to grow and shrink */
 }
 </style>
