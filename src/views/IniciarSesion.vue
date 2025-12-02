@@ -81,21 +81,19 @@ const handleRegistroSubmit = () => {
         @submit="handleRegistroSubmit"
         @toggle-form="toggleForm"
       >
-        <div class="form-row">
-          <FormInput
-            id="nombre"
-            v-model="registroNombre"
-            label="Nombre"
-            placeholder="Juan"
-          />
+        <FormInput
+          id="nombre"
+          v-model="registroNombre"
+          label="Nombre"
+          placeholder="Juan"
+        />
 
-          <FormInput
-            id="apellido"
-            v-model="registroApellido"
-            label="Apellido"
-            placeholder="Pérez"
-          />
-        </div>
+        <FormInput
+          id="apellido"
+          v-model="registroApellido"
+          label="Apellido"
+          placeholder="Pérez"
+        />
 
         <FormInput
           id="email-registro"
@@ -136,11 +134,5 @@ const handleRegistroSubmit = () => {
   align-items: flex-start;
   padding-top: 40px;
   min-height: calc(100vh - 200px);
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 0.7fr; /* ajusta el ancho del segundo campo (Apellido) */
-  gap: 16px;
 }
 </style>
