@@ -8,6 +8,9 @@ Componentes reutilizables y pequeños: piezas UI atómicas o moleculares.
 - Tablas (`DataTable.vue`)
 - Modales (`Modal.vue`)
 - Loaders (`Spinner.vue`)
+- Formulario de entrada (`FormInput.vue`)
+- Tarjeta de vidrio (`GlassCard.vue`)
+- Entrada de tarea (`TaskInput.vue`)
 
 ## Convenciones
 - Prefijo opcional `Base` para componentes neutros
