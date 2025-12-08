@@ -5,22 +5,15 @@ GO
 
 -- 1. Obtener todos los usuarios
 SELECT * FROM Usuarios;
-SELECT id, nombre, apellido, email, fechaCreacion, activo
-FROM Usuarios;
 
 -- 2. Obtener todos los estados
-SELECT id, nombre, descripcion
-FROM Estados;
+SELECT * FROM Estados;
 
 -- 3. Obtener todas las prioridades
-SELECT id, nombre, nivel
-FROM Prioridades;
+SELECT * FROM Prioridades;
 
 -- 4. Obtener todas las tareas
 SELECT * FROM Tareas;
-SELECT id, titulo, descripcion, usuarioId, estadoId, prioridadId, 
-       fechaCreacion, fechaVencimiento, fechaCompletacion
-FROM Tareas;
 
 -- 5. Obtener tareas con información completa (JOIN)
 SELECT 
