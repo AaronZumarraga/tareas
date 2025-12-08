@@ -1,30 +1,17 @@
-import sql from 'mssql';
+import sql from 'mssql/msnodesqlv8.js';
 
 const config = {
   server: 'PC-INOVA',
   database: 'bdd_prueba1',
-  authentication: {
-    type: 'ntlm', // Cambia a 'ntlm' para autenticación de Windows
-  },
-  options: { trustServerCertificate: true, encrypt: false }
+  driver: 'msnodesqlv8',
+  options: {
+    trustedConnection: true
+  }
 };
 
-let pool = null;
-
-async function getPool() {
-  if (!pool) {
-    pool = await new sql.ConnectionPool(config).connect();
-    console.log('✓ Conexión exitosa a SQL Server 2022');
+export async function getPool() {
+  if (!global.connectionPool) {
+    global.connectionPool = await sql.connect(config);
   }
-  return pool;
+  return global.connectionPool;
 }
-
-async function closePool() {
-  if (pool) {
-    await pool.close();
-    pool = null;
-    console.log('✓ Conexión cerrada');
-  }
-}
-
-export { getPool, closePool };
