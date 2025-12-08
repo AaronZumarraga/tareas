@@ -102,3 +102,12 @@ END
 GO
 
 PRINT '✓ Base de datos y tablas creadas exitosamente';
+
+-- Insertar un usuario de ejemplo si no existe
+IF NOT EXISTS (SELECT * FROM Usuarios WHERE email = 'usuario@ejemplo.com')
+BEGIN
+    INSERT INTO Usuarios (nombre, apellido, email, password)
+    VALUES ('Usuario', 'Ejemplo', 'usuario@ejemplo.com', 'password123');
+    PRINT '✓ Usuario de ejemplo creado';
+END
+GO
