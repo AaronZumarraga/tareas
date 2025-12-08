@@ -58,3 +58,10 @@ SQL Server
    npm run dev
    ```
 5. Accede a la aplicación en `http://localhost:5173/` y verifica la consola del navegador para mensajes.
+
+## Endpoints disponibles
+
+- `GET http://localhost:3000/api` - Información de la API
+- `GET http://localhost:3000/api/health` - Estado del servidor
+- `GET http://localhost:3000/api/tareas` - Obtener todas las tareas
+- `POST http://localhost:3000/api/tareas` - Crear nueva tarea

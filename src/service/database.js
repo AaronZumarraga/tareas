@@ -1,4 +1,4 @@
-const sql = require('mssql');
+import sql from 'mssql';
 
 const config = {
   server: 'PC-INOVA',
@@ -41,10 +41,10 @@ async function closePool() {
 }
 
 // PRUEBA DE CONEXIÓN
-(async () => {
-  console.log('Iniciando prueba de conexión...');
-  await connectDB();
-  await closePool();
-})();
+// (async () => {
+//   console.log('Iniciando prueba de conexión...');
+//   await connectDB();
+//   await closePool();
+// })();
 
-module.exports = { connectDB, getPool, closePool };
+export { connectDB, getPool, closePool };
