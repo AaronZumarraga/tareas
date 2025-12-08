@@ -18,6 +18,7 @@ app.get('/api/tareas', async (req, res) => {
     const result = await pool.request().query(`
       SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
              e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
+             t.completed,
              t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
       FROM Tareas t
       LEFT JOIN Estados e ON t.estadoId = e.id
@@ -52,7 +53,7 @@ app.post('/api/tareas', async (req, res) => {
     const estadoId = estadoResult.recordset[0].id;
 
     // Obtener prioridadId
-    let prioridadId = 2; // Media por defecto
+    let prioridadId = 2;
     if (prioridad) {
       const prioridadResult = await pool.request()
         .input('nombre', prioridad)
@@ -83,17 +84,24 @@ app.post('/api/tareas', async (req, res) => {
       usuarioId = usuarioResult.recordset[0].id;
     }
 
+    // Determinar completed basado en estado
+    const completed = (estado === 'Completada') ? 1 : 0;
+    const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
+
     const result = await pool.request()
       .input('titulo', titulo)
       .input('descripcion', descripcion || '')
       .input('usuarioId', usuarioId)
       .input('estadoId', estadoId)
       .input('prioridadId', prioridadId)
+      .input('completed', completed)
       .input('fechaVencimiento', fechaVencimiento || null)
       .query(`
-        INSERT INTO Tareas (titulo, descripcion, usuarioId, estadoId, prioridadId, fechaVencimiento)
-        OUTPUT INSERTED.id, INSERTED.titulo, INSERTED.descripcion, INSERTED.usuarioId, INSERTED.estadoId, INSERTED.prioridadId, INSERTED.fechaVencimiento, INSERTED.fechaCreacion
-        VALUES (@titulo, @descripcion, @usuarioId, @estadoId, @prioridadId, @fechaVencimiento)
+        INSERT INTO Tareas (titulo, descripcion, usuarioId, estadoId, prioridadId, completed, fechaVencimiento, fechaCompletacion)
+        OUTPUT INSERTED.id, INSERTED.titulo, INSERTED.descripcion, INSERTED.usuarioId, 
+               INSERTED.estadoId, INSERTED.prioridadId, INSERTED.completed,
+               INSERTED.fechaVencimiento, INSERTED.fechaCreacion, INSERTED.fechaCompletacion
+        VALUES (@titulo, @descripcion, @usuarioId, @estadoId, @prioridadId, @completed, @fechaVencimiento, ${fechaCompletacion})
       `);
 
     const tarea = result.recordset[0];
@@ -114,8 +122,10 @@ app.post('/api/tareas', async (req, res) => {
       estado: estadoNombre.recordset[0].nombre,
       prioridad: prioridadNombre.recordset[0].nombre,
       prioridadId: tarea.prioridadId,
+      completed: tarea.completed,
       fechaVencimiento: tarea.fechaVencimiento,
-      fechaCreacion: tarea.fechaCreacion
+      fechaCreacion: tarea.fechaCreacion,
+      fechaCompletacion: tarea.fechaCompletacion
     });
   } catch (error) {
     console.error('Error al crear tarea:', error);
@@ -145,7 +155,7 @@ app.put('/api/tareas/:id', async (req, res) => {
     const estadoId = estadoResult.recordset[0].id;
 
     // Obtener prioridadId
-    let prioridadId = 2; // Media por defecto
+    let prioridadId = 2;
     if (prioridad) {
       const prioridadResult = await pool.request()
         .input('nombre', prioridad)
@@ -156,8 +166,9 @@ app.put('/api/tareas/:id', async (req, res) => {
       }
     }
 
-    // Determinar si se debe actualizar fechaCompletacion
-    const fechaCompletacion = (estado === 'Completada') ? 'GETDATE()' : 'NULL';
+    // Determinar completed y fechaCompletacion basado en estado
+    const completed = (estado === 'Completada') ? 1 : 0;
+    const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
 
     const result = await pool.request()
       .input('id', id)
@@ -165,6 +176,7 @@ app.put('/api/tareas/:id', async (req, res) => {
       .input('descripcion', descripcion || '')
       .input('estadoId', estadoId)
       .input('prioridadId', prioridadId)
+      .input('completed', completed)
       .input('fechaVencimiento', fechaVencimiento || null)
       .query(`
         UPDATE Tareas
@@ -172,6 +184,7 @@ app.put('/api/tareas/:id', async (req, res) => {
             descripcion = @descripcion, 
             estadoId = @estadoId,
             prioridadId = @prioridadId,
+            completed = @completed,
             fechaVencimiento = @fechaVencimiento, 
             fechaModificacion = GETDATE(),
             fechaCompletacion = ${fechaCompletacion}
@@ -188,6 +201,7 @@ app.put('/api/tareas/:id', async (req, res) => {
       .query(`
         SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
                e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
+               t.completed,
                t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
         FROM Tareas t
         LEFT JOIN Estados e ON t.estadoId = e.id

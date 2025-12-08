@@ -7,6 +7,7 @@ export interface Tarea {
   estado: string;
   prioridad: string;
   prioridadId: number;
+  completed: boolean;
   fechaVencimiento?: string;
   fechaCreacion?: string;
   fechaCompletacion?: string;

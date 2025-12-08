@@ -202,19 +202,19 @@ const getPriorityColor = (priority: string): string => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 18px 22px;
   background: white;
-  border-radius: 12px;
-  margin-bottom: 12px;
+  border-radius: 14px;
+  margin-bottom: 14px;
   border: 2px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  animation: slideIn 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-15px);
   }
   to {
     opacity: 1;
@@ -223,53 +223,60 @@ const getPriorityColor = (priority: string): string => {
 }
 
 .task-item:hover {
-  border-color: rgba(37, 99, 235, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
 }
 
 .task-item.completed {
-  opacity: 0.7;
-  background: rgba(248, 250, 252, 0.8);
+  opacity: 0.65;
+  background: rgba(248, 250, 252, 0.9);
 }
 
 .task-content {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
+  gap: 16px;
   flex: 1;
   min-width: 0;
 }
 
 .checkbox {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border: 2px solid #cbd5e1;
-  border-radius: 6px;
+  border-radius: 8px;
   background: white;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .checkbox:hover {
   border-color: #2563eb;
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .checkbox.checked {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border-color: #2563eb;
+  transform: scale(1.05);
 }
 
 .checkmark {
   color: white;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: bold;
+  animation: checkPop 0.3s ease;
+}
+
+@keyframes checkPop {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
 .task-text-wrapper {
@@ -280,49 +287,58 @@ const getPriorityColor = (priority: string): string => {
 .task-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 4px;
+  gap: 14px;
+  margin-bottom: 6px;
 }
 
 .task-text {
   color: #1e293b;
-  font-size: 0.95rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.6;
   word-wrap: break-word;
   overflow-wrap: break-word;
   flex: 1;
+  font-weight: 500;
 }
 
 .task-badges {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .task-status,
 .task-priority {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 6px;
+  padding: 5px 14px;
+  border-radius: 8px;
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.task-status:hover,
+.task-priority:hover {
+  transform: translateY(-2px);
 }
 
 .task-description {
   color: #64748b;
-  font-size: 0.85rem;
-  margin: 4px 0;
-  line-height: 1.4;
+  font-size: 0.9rem;
+  margin: 6px 0;
+  line-height: 1.5;
   word-wrap: break-word;
 }
 
 .task-due-date {
   color: #94a3b8;
-  font-size: 0.8rem;
-  margin-top: 6px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  font-weight: 500;
 }
 
 .task-item.completed .task-text {
@@ -334,7 +350,7 @@ const getPriorityColor = (priority: string): string => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -342,82 +358,90 @@ const getPriorityColor = (priority: string): string => {
 .task-edit-textarea,
 .task-edit-select,
 .task-edit-date {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 2px solid #2563eb;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
   outline: none;
   background: white;
   color: #1e293b;
   font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.task-edit-input:focus,
+.task-edit-textarea:focus,
+.task-edit-select:focus,
+.task-edit-date:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
 .task-edit-textarea {
   resize: vertical;
-  min-height: 50px;
+  min-height: 60px;
 }
 
 .edit-selects-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
 }
 
 .task-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .btn-action {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border: none;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.05);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  transition: all 0.2s ease;
+  font-size: 1.1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-action:hover {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .btn-edit:hover {
-  background: rgba(37, 99, 235, 0.1);
+  background: rgba(37, 99, 235, 0.15);
 }
 
 .btn-delete:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .btn-save {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(34, 197, 94, 0.15);
   color: #16a34a;
   font-weight: bold;
 }
 
 .btn-save:hover {
-  background: rgba(34, 197, 94, 0.2);
+  background: rgba(34, 197, 94, 0.25);
 }
 
 .btn-cancel {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.15);
   color: #dc2626;
   font-weight: bold;
 }
 
 .btn-cancel:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.25);
 }
 
 @media (max-width: 768px) {
   .task-item {
-    padding: 14px 16px;
+    padding: 16px 18px;
     flex-direction: column;
   }
   
@@ -426,13 +450,13 @@ const getPriorityColor = (priority: string): string => {
   }
   
   .task-text {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
   
   .task-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
   }
   
   .task-badges {
@@ -445,13 +469,14 @@ const getPriorityColor = (priority: string): string => {
   
   .task-actions {
     width: 100%;
-    margin-top: 12px;
+    margin-top: 14px;
+    justify-content: flex-end;
   }
   
   .btn-action {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
   }
 }
 </style>

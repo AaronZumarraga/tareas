@@ -148,63 +148,88 @@ const tasksStats = computed(() => ({
 .tareas {
   max-width: 90%;
   margin: 0 auto;
-  padding-top: 20px;
-  padding-bottom: 40px;
+  padding-top: 24px;
+  padding-bottom: 48px;
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .task-list {
-  min-height: 200px;
+  min-height: 220px;
 }
 
 .empty-state {
   text-align: center;
-  padding: 60px 20px;
+  padding: 70px 20px;
+  animation: fadeIn 0.5s ease;
 }
 
 .empty-icon {
-  font-size: 4rem;
-  margin-bottom: 16px;
+  font-size: 4.5rem;
+  margin-bottom: 20px;
   opacity: 0.5;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 .empty-title {
   color: #64748b;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .empty-subtitle {
   color: #94a3b8;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 /* List Transitions */
 .list-move,
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .list-enter-from {
   opacity: 0;
-  transform: translateX(-30px);
+  transform: translateX(-40px);
 }
 
 .list-leave-to {
   opacity: 0;
-  transform: translateX(30px);
+  transform: translateX(40px);
 }
 
 .list-leave-active {
   position: absolute;
-  width: calc(100% - 40px);
+  width: calc(100% - 44px);
 }
 
 @media (max-width: 768px) {
   .tareas {
-    padding-bottom: 30px;
+    padding-top: 20px;
+    padding-bottom: 36px;
   }
   
+  .empty-state {
+    padding: 50px 20px;
+  }
+  
+  .empty-icon {
+    font-size: 3.5rem;
+  }
 }
 </style>

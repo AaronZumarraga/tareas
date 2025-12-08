@@ -69,6 +69,7 @@ BEGIN
         usuarioId INT NOT NULL,
         estadoId INT NOT NULL DEFAULT 1,
         prioridadId INT NOT NULL DEFAULT 2,
+        completed BIT DEFAULT 0,
         fechaCreacion DATETIME DEFAULT GETDATE(),
         fechaVencimiento DATETIME,
         fechaCompletacion DATETIME,
@@ -77,6 +78,14 @@ BEGIN
         FOREIGN KEY (estadoId) REFERENCES Estados(id),
         FOREIGN KEY (prioridadId) REFERENCES Prioridades(id)
     );
+END
+ELSE
+BEGIN
+    -- Agregar columna completed si no existe
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Tareas') AND name = 'completed')
+    BEGIN
+        ALTER TABLE Tareas ADD completed BIT DEFAULT 0;
+    END
 END
 GO
 

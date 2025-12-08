@@ -76,13 +76,25 @@ const handleAdd = () => {
 
 <style scoped>
 .task-input-wrapper {
-  margin-bottom: 30px;
+  margin-bottom: 32px;
+  animation: fadeInDown 0.5s ease;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .task-input {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .input-group {
@@ -92,30 +104,35 @@ const handleAdd = () => {
   background: white;
   border: 2px solid rgba(37, 99, 235, 0.1);
   border-radius: 12px;
-  padding: 0 16px;
+  padding: 0 18px;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .input-group:focus-within {
   border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
-  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
+  transform: translateY(-2px);
 }
 
 .input-icon {
-  font-size: 1.2rem;
-  margin-right: 12px;
+  font-size: 1.3rem;
+  margin-right: 14px;
   opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.input-group:focus-within .input-icon {
+  opacity: 1;
 }
 
 .task-input input[type="text"] {
   flex: 1;
-  padding: 14px 0;
+  padding: 16px 0;
   border: none;
   background: transparent;
   color: #1e293b;
-  font-size: 0.95rem;
+  font-size: 1rem;
   outline: none;
 }
 
@@ -124,113 +141,112 @@ const handleAdd = () => {
 }
 
 .description-input {
-  padding: 12px 16px;
+  padding: 14px 18px;
   border: 2px solid rgba(37, 99, 235, 0.1);
   border-radius: 12px;
   background: white;
   color: #1e293b;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   outline: none;
   resize: vertical;
-  min-height: 60px;
+  min-height: 70px;
   font-family: inherit;
   transition: all 0.3s ease;
 }
 
 .description-input:focus {
   border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
 }
 
 .description-input::placeholder {
   color: #94a3b8;
 }
 
-.status-select {
-  padding: 12px 16px;
-  border: 2px solid rgba(37, 99, 235, 0.1);
-  border-radius: 12px;
-  background: white;
-  color: #1e293b;
-  font-size: 0.9rem;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.status-select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
-}
-
+.status-select,
 .priority-select {
-  padding: 12px 16px;
+  padding: 13px 18px;
   border: 2px solid rgba(37, 99, 235, 0.1);
   border-radius: 12px;
   background: white;
   color: #1e293b;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   outline: none;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
+.status-select:hover,
+.priority-select:hover {
+  border-color: rgba(37, 99, 235, 0.3);
+}
+
+.status-select:focus,
 .priority-select:focus {
   border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
 }
 
 .due-date-input {
-  padding: 12px 16px;
+  padding: 13px 18px;
   border: 2px solid rgba(37, 99, 235, 0.1);
   border-radius: 12px;
   background: white;
   color: #1e293b;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   outline: none;
   transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.due-date-input:hover {
+  border-color: rgba(37, 99, 235, 0.3);
 }
 
 .due-date-input:focus {
   border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
 }
 
 .btn-add {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 28px;
+  gap: 10px;
+  padding: 14px 32px;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 0.95rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
 }
 
 .btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
 }
 
 .btn-add:active {
-  transform: translateY(0);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
 }
 
 .btn-icon {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: bold;
 }
 
 .selects-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
 @media (max-width: 768px) {
@@ -251,7 +267,7 @@ const handleAdd = () => {
   
   .btn-add {
     justify-content: center;
-    padding: 12px 24px;
+    padding: 13px 28px;
   }
 }
 </style>
