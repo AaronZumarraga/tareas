@@ -3,7 +3,10 @@ import { ref } from 'vue'
 
 interface Props {
   id: number
-  text: string
+  titulo: string
+  descripcion: string
+  estado: string
+  prioridad: string
   completed: boolean
   dueDate?: string
 }
@@ -13,12 +16,17 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   toggle: [id: number]
   delete: [id: number]
-  edit: [id: number, text: string, dueDate: string]
+  edit: [id: number, data: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }]
 }>()
 
 const isEditing = ref(false)
-const editText = ref(props.text)
+const editTitulo = ref(props.titulo)
+const editDescripcion = ref(props.descripcion)
+const editEstado = ref(props.estado)
+const editPrioridad = ref(props.prioridad)
 const editDueDate = ref(props.dueDate || '')
+const states = ['Pendiente', 'En Progreso', 'Completada', 'Cancelada']
+const priorities = ['Baja', 'Media', 'Alta', 'Urgente']
 
 const handleToggle = () => {
   emit('toggle', props.id)
@@ -30,27 +38,54 @@ const handleDelete = () => {
 
 const startEdit = () => {
   isEditing.value = true
-  editText.value = props.text
+  editTitulo.value = props.titulo
+  editDescripcion.value = props.descripcion
+  editEstado.value = props.estado
+  editPrioridad.value = props.prioridad
   editDueDate.value = props.dueDate || ''
 }
 
 const saveEdit = () => {
-  if (editText.value.trim()) {
-    emit('edit', props.id, editText.value, editDueDate.value)
+  if (editTitulo.value.trim()) {
+    emit('edit', props.id, {
+      titulo: editTitulo.value,
+      descripcion: editDescripcion.value,
+      estado: editEstado.value,
+      prioridad: editPrioridad.value,
+      fechaVencimiento: editDueDate.value
+    })
     isEditing.value = false
   }
 }
 
 const cancelEdit = () => {
   isEditing.value = false
-  editText.value = props.text
-  editDueDate.value = props.dueDate || ''
 }
 
 const formatDate = (dateString: string): string => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const getStatusColor = (status: string): string => {
+  const colors: Record<string, string> = {
+    'Pendiente': '#f59e0b',
+    'En Progreso': '#3b82f6',
+    'Completada': '#10b981',
+    'Cancelada': '#ef4444'
+  }
+  return colors[status] || '#64748b'
+}
+
+const getPriorityColor = (priority: string): string => {
+  const colors: Record<string, string> = {
+    'Baja': '#64748b',
+    'Media': '#f59e0b',
+    'Alta': '#f97316',
+    'Urgente': '#ef4444'
+  }
+  return colors[priority] || '#64748b'
 }
 </script>
 
@@ -67,23 +102,59 @@ const formatDate = (dateString: string): string => {
       </button>
       
       <div class="task-text-wrapper" v-if="!isEditing">
-        <p class="task-text">{{ text }}</p>
+        <div class="task-header">
+          <p class="task-text">{{ titulo }}</p>
+          <div class="task-badges">
+            <span class="task-status" :style="{ backgroundColor: getStatusColor(estado) }">
+              {{ estado }}
+            </span>
+            <span class="task-priority" :style="{ backgroundColor: getPriorityColor(prioridad) }">
+              🔥 {{ prioridad }}
+            </span>
+          </div>
+        </div>
+        <p v-if="descripcion" class="task-description">{{ descripcion }}</p>
         <p v-if="dueDate" class="task-due-date">📅 {{ formatDate(dueDate) }}</p>
       </div>
       
       <div v-else class="task-edit-wrapper">
         <input 
-          v-model="editText"
+          v-model="editTitulo"
           class="task-edit-input"
-          @keyup.enter="saveEdit"
+          placeholder="Título"
           @keyup.esc="cancelEdit"
           autofocus
         />
+        <textarea 
+          v-model="editDescripcion"
+          class="task-edit-textarea"
+          placeholder="Descripción (opcional)"
+          @keyup.esc="cancelEdit"
+        ></textarea>
+        <div class="edit-selects-row">
+          <select 
+            v-model="editEstado"
+            class="task-edit-select"
+            @keyup.esc="cancelEdit"
+          >
+            <option v-for="state in states" :key="state" :value="state">
+              {{ state }}
+            </option>
+          </select>
+          <select 
+            v-model="editPrioridad"
+            class="task-edit-select"
+            @keyup.esc="cancelEdit"
+          >
+            <option v-for="p in priorities" :key="p" :value="p">
+              🔥 {{ p }}
+            </option>
+          </select>
+        </div>
         <input 
           v-model="editDueDate"
           type="date"
           class="task-edit-date"
-          @keyup.enter="saveEdit"
           @keyup.esc="cancelEdit"
         />
       </div>
@@ -129,7 +200,7 @@ const formatDate = (dateString: string): string => {
 <style scoped>
 .task-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 16px 20px;
   background: white;
@@ -164,7 +235,7 @@ const formatDate = (dateString: string): string => {
 
 .task-content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   flex: 1;
   min-width: 0;
@@ -182,6 +253,7 @@ const formatDate = (dateString: string): string => {
   justify-content: center;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .checkbox:hover {
@@ -205,18 +277,52 @@ const formatDate = (dateString: string): string => {
   min-width: 0;
 }
 
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
 .task-text {
   color: #1e293b;
   font-size: 0.95rem;
   line-height: 1.5;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  flex: 1;
+}
+
+.task-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.task-status,
+.task-priority {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.task-description {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin: 4px 0;
+  line-height: 1.4;
+  word-wrap: break-word;
 }
 
 .task-due-date {
   color: #94a3b8;
   font-size: 0.8rem;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .task-item.completed .task-text {
@@ -232,23 +338,29 @@ const formatDate = (dateString: string): string => {
   min-width: 0;
 }
 
-.task-edit-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 2px solid #2563eb;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  outline: none;
-  background: white;
-}
-
+.task-edit-input,
+.task-edit-textarea,
+.task-edit-select,
 .task-edit-date {
   padding: 8px 12px;
   border: 2px solid #2563eb;
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   outline: none;
   background: white;
+  color: #1e293b;
+  font-family: inherit;
+}
+
+.task-edit-textarea {
+  resize: vertical;
+  min-height: 50px;
+}
+
+.edit-selects-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 .task-actions {
@@ -306,10 +418,34 @@ const formatDate = (dateString: string): string => {
 @media (max-width: 768px) {
   .task-item {
     padding: 14px 16px;
+    flex-direction: column;
+  }
+  
+  .task-content {
+    width: 100%;
   }
   
   .task-text {
     font-size: 0.9rem;
+  }
+  
+  .task-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .task-badges {
+    width: 100%;
+  }
+  
+  .edit-selects-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .task-actions {
+    width: 100%;
+    margin-top: 12px;
   }
   
   .btn-action {

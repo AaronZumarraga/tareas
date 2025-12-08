@@ -1,22 +1,31 @@
 const API_BASE = 'http://localhost:3000/api';
 
-interface Tarea {
+export interface Tarea {
   id: number;
   titulo: string;
   descripcion: string;
   estado: string;
+  prioridad: string;
+  prioridadId: number;
   fechaVencimiento?: string;
   fechaCreacion?: string;
+  fechaCompletacion?: string;
+  fechaModificacion?: string;
 }
 
 export async function fetchTareas(): Promise<Tarea[]> {
   const response = await fetch(`${API_BASE}/tareas`);
   if (!response.ok) throw new Error('Error al obtener tareas');
-  const tareas = await response.json();
-  return tareas;
+  return response.json();
 }
 
-export async function crearTarea(data: Omit<Tarea, 'id' | 'fechaCreacion'>): Promise<Tarea> {
+export async function crearTarea(data: {
+  titulo: string;
+  descripcion: string;
+  estado: string;
+  prioridad: string;
+  fechaVencimiento?: string;
+}): Promise<Tarea> {
   const response = await fetch(`${API_BASE}/tareas`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -29,7 +38,13 @@ export async function crearTarea(data: Omit<Tarea, 'id' | 'fechaCreacion'>): Pro
   return response.json();
 }
 
-export async function updateTarea(id: number, data: Omit<Tarea, 'id' | 'fechaCreacion'>): Promise<Tarea> {
+export async function updateTarea(id: number, data: {
+  titulo: string;
+  descripcion: string;
+  estado: string;
+  prioridad: string;
+  fechaVencimiento?: string;
+}): Promise<Tarea> {
   const response = await fetch(`${API_BASE}/tareas/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

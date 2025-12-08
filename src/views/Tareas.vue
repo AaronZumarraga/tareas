@@ -7,93 +7,88 @@ import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
-import { fetchTareas, crearTarea, eliminarTarea, updateTarea } from '../service/tareas.service.ts'
+import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea } from '../service/tareas.service.ts'
 
-interface Task {
-  id: number
-  text: string
-  completed: boolean
-  dueDate?: string
-}
-
-const tasks = ref<Task[]>([])
+const tasks = ref<Tarea[]>([])
 const filter = ref<'all' | 'active' | 'completed'>('all')
 
 const loadTasks = async () => {
-  const fetched = await fetchTareas()
-  tasks.value = fetched.map((tarea: any) => ({
-    id: tarea.id,
-    text: tarea.titulo,
-    completed: tarea.estadoId === 3, // 3 = Completada
-    dueDate: tarea.fechaVencimiento
-  }))
+  try {
+    const fetched = await fetchTareas()
+    tasks.value = fetched
+  } catch (error) {
+    console.error('Error cargando tareas:', error)
+  }
 }
 
 onMounted(loadTasks)
 
-const handleAddTask = async (taskText: string, dueDate: string) => {
-  const newTask = await crearTarea({ 
-    titulo: taskText, 
-    descripcion: '', 
-    estado: 'Pendiente',
-    fechaVencimiento: dueDate
-  })
-  tasks.value.push({
-    id: newTask.id,
-    text: newTask.titulo,
-    completed: false,
-    dueDate: newTask.fechaVencimiento
-  })
+const handleAddTask = async (taskData: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }) => {
+  try {
+    const newTask = await crearTarea(taskData)
+    tasks.value.push(newTask)
+  } catch (error) {
+    console.error('Error creando tarea:', error)
+  }
 }
 
 const handleToggleTask = async (id: number) => {
   const task = tasks.value.find(t => t.id === id)
   if (task) {
-    task.completed = !task.completed
-    const newState = task.completed ? 'Completada' : 'Pendiente'
-    await updateTarea(id, { 
-      titulo: task.text, 
-      descripcion: '', 
-      estado: newState,
-      fechaVencimiento: task.dueDate || ''
-    })
+    const newState = task.estado === 'Completada' ? 'Pendiente' : 'Completada'
+    try {
+      const updated = await updateTarea(id, {
+        titulo: task.titulo,
+        descripcion: task.descripcion,
+        estado: newState,
+        prioridad: task.prioridad,
+        fechaVencimiento: task.fechaVencimiento || ''
+      })
+      const index = tasks.value.findIndex(t => t.id === id)
+      if (index !== -1) {
+        tasks.value[index] = updated
+      }
+    } catch (error) {
+      console.error('Error actualizando tarea:', error)
+    }
   }
 }
 
 const handleDeleteTask = async (id: number) => {
-  await eliminarTarea(id)
-  tasks.value = tasks.value.filter(t => t.id !== id)
+  try {
+    await eliminarTarea(id)
+    tasks.value = tasks.value.filter(t => t.id !== id)
+  } catch (error) {
+    console.error('Error eliminando tarea:', error)
+  }
 }
 
-const handleEditTask = async (id: number, text: string, dueDate: string) => {
-  const task = tasks.value.find(t => t.id === id)
-  if (task) {
-    task.text = text
-    task.dueDate = dueDate
-    const state = task.completed ? 'Completada' : 'Pendiente'
-    await updateTarea(id, { 
-      titulo: text, 
-      descripcion: '', 
-      estado: state,
-      fechaVencimiento: dueDate
-    })
+const handleEditTask = async (id: number, data: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }) => {
+  try {
+    const updated = await updateTarea(id, data)
+    const index = tasks.value.findIndex(t => t.id === id)
+    if (index !== -1) {
+      tasks.value[index] = updated
+    }
+  } catch (error) {
+    console.error('Error editando tarea:', error)
   }
 }
 
 const filteredTasks = computed(() => {
   if (filter.value === 'active') {
-    return tasks.value.filter(t => !t.completed)
+    return tasks.value.filter(t => t.estado !== 'Completada')
   }
   if (filter.value === 'completed') {
-    return tasks.value.filter(t => t.completed)
+    return tasks.value.filter(t => t.estado === 'Completada')
   }
   return tasks.value
 })
 
 const tasksStats = computed(() => ({
   total: tasks.value.length,
-  active: tasks.value.filter(t => !t.completed).length,
-  completed: tasks.value.filter(t => t.completed).length
+  active: tasks.value.filter(t => t.estado !== 'Completada').length,
+  completed: tasks.value.filter(t => t.estado === 'Completada').length
 }))
 </script>
 
@@ -116,16 +111,18 @@ const tasksStats = computed(() => ({
         @update:modelValue="filter = $event"
       />
 
-      <!-- Task List -->
       <div class="task-list">
         <TransitionGroup name="list">
           <TaskItem
             v-for="task in filteredTasks"
             :key="task.id"
             :id="task.id"
-            :text="task.text"
-            :completed="task.completed"
-            :dueDate="task.dueDate"
+            :titulo="task.titulo"
+            :descripcion="task.descripcion"
+            :estado="task.estado"
+            :prioridad="task.prioridad"
+            :completed="task.estado === 'Completada'"
+            :dueDate="task.fechaVencimiento"
             @toggle="handleToggleTask"
             @delete="handleDeleteTask"
             @edit="handleEditTask"

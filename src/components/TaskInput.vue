@@ -3,17 +3,31 @@
 import { ref } from 'vue'
 
 const emit = defineEmits<{
-  addTask: [taskText: string, dueDate: string]
+  addTask: [taskData: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }]
 }>()
 
 const taskText = ref('')
+const description = ref('')
 const dueDate = ref('')
+const status = ref('Pendiente')
+const priority = ref('Media')
+const states = ['Pendiente', 'En Progreso', 'Completada', 'Cancelada']
+const priorities = ['Baja', 'Media', 'Alta', 'Urgente']
 
 const handleAdd = () => {
   if (taskText.value.trim()) {
-    emit('addTask', taskText.value, dueDate.value)
+    emit('addTask', {
+      titulo: taskText.value,
+      descripcion: description.value,
+      estado: status.value,
+      prioridad: priority.value,
+      fechaVencimiento: dueDate.value
+    })
     taskText.value = ''
+    description.value = ''
     dueDate.value = ''
+    status.value = 'Pendiente'
+    priority.value = 'Media'
   }
 }
 </script>
@@ -29,6 +43,23 @@ const handleAdd = () => {
           placeholder="¿Qué necesitas hacer hoy?"
           @keyup.enter="handleAdd"
         />
+      </div>
+      <textarea 
+        v-model="description"
+        placeholder="Descripción (opcional)"
+        class="description-input"
+      ></textarea>
+      <div class="selects-row">
+        <select v-model="status" class="status-select">
+          <option v-for="state in states" :key="state" :value="state">
+            {{ state }}
+          </option>
+        </select>
+        <select v-model="priority" class="priority-select">
+          <option v-for="p in priorities" :key="p" :value="p">
+            🔥 {{ p }}
+          </option>
+        </select>
       </div>
       <input 
         v-model="dueDate"
@@ -50,24 +81,8 @@ const handleAdd = () => {
 
 .task-input {
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: stretch;
-}
-
-.due-date-input {
-  padding: 14px 12px;
-  border: 2px solid rgba(37, 99, 235, 0.1);
-  border-radius: 12px;
-  background: white;
-  color: #1e293b;
-  font-size: 0.9rem;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-.due-date-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
 }
 
 .input-group {
@@ -94,7 +109,7 @@ const handleAdd = () => {
   opacity: 0.6;
 }
 
-.task-input input {
+.task-input input[type="text"] {
   flex: 1;
   padding: 14px 0;
   border: none;
@@ -108,11 +123,85 @@ const handleAdd = () => {
   color: #94a3b8;
 }
 
+.description-input {
+  padding: 12px 16px;
+  border: 2px solid rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  background: white;
+  color: #1e293b;
+  font-size: 0.9rem;
+  outline: none;
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.description-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+
+.description-input::placeholder {
+  color: #94a3b8;
+}
+
+.status-select {
+  padding: 12px 16px;
+  border: 2px solid rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  background: white;
+  color: #1e293b;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.status-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+
+.priority-select {
+  padding: 12px 16px;
+  border: 2px solid rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  background: white;
+  color: #1e293b;
+  font-size: 0.9rem;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.priority-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+
+.due-date-input {
+  padding: 12px 16px;
+  border: 2px solid rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  background: white;
+  color: #1e293b;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.due-date-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+}
+
 .btn-add {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  padding: 14px 28px;
+  padding: 12px 28px;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
   border: none;
@@ -122,7 +211,6 @@ const handleAdd = () => {
   transition: all 0.3s ease;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-  white-space: nowrap;
 }
 
 .btn-add:hover {
@@ -139,22 +227,31 @@ const handleAdd = () => {
   font-weight: bold;
 }
 
+.selects-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 @media (max-width: 768px) {
   .task-input {
     flex-direction: column;
   }
   
-  .due-date-input {
+  .selects-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .due-date-input,
+  .status-select,
+  .priority-select,
+  .description-input {
     width: 100%;
   }
   
   .btn-add {
     justify-content: center;
-    padding: 14px 24px;
-  }
-  
-  .btn-text {
-    display: inline;
+    padding: 12px 24px;
   }
 }
 </style>
