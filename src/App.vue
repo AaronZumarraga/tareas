@@ -1,12 +1,34 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
 const isMenuOpen = ref(false)
+const authUser = ref<any>(null)
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
 }
+
+const loadAuth = () => {
+  const saved = localStorage.getItem('auth_user')
+  authUser.value = saved ? JSON.parse(saved) : null
+}
+
+const handleStorage = (e: StorageEvent) => {
+  if (e.key === 'auth_user') loadAuth()
+}
+const handleAuthChange = () => loadAuth()
+
+onMounted(() => {
+  loadAuth()
+  window.addEventListener('storage', handleStorage)
+  window.addEventListener('auth-change', handleAuthChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', handleStorage)
+  window.removeEventListener('auth-change', handleAuthChange)
+})
 </script>
 
 <template>
@@ -21,7 +43,12 @@ const toggleMenu = () => {
           <RouterLink to="/" class="nav-link">Inicio</RouterLink>
           <RouterLink to="/tareas" class="nav-link">Tareas</RouterLink>
           <RouterLink to="/acerca-de" class="nav-link">Acerca de</RouterLink>
-          <RouterLink to="/iniciar-sesion" class="nav-link">Iniciar Sesión</RouterLink>
+          <RouterLink
+            :to="authUser ? '/perfil' : '/iniciar-sesion'"
+            class="nav-link"
+          >
+            {{ authUser ? 'Perfil' : 'Iniciar Sesión' }}
+          </RouterLink>
         </nav>
       </div>
     </header>

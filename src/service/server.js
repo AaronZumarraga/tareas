@@ -31,13 +31,13 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { nombre, apellido, email, password } = req.body;
     if (!nombre || !apellido || !email || !password) {
-      return res.status(400).json({ message: 'Todos los campos son requeridos' });
+      return res.status(400).send('Completa todos los campos');
     }
 
     const pool = await getPool();
     const exists = await pool.request().input('email', email).query('SELECT id FROM Usuarios WHERE email = @email');
     if (exists.recordset.length) {
-      return res.status(409).json({ message: 'El correo ya está registrado' });
+      return res.status(409).send('El correo ya está registrado');
     }
 
     const hashed = hashPassword(password);
@@ -55,7 +55,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json(inserted.recordset[0]);
   } catch (error) {
     console.error('Error al registrar usuario:', error);
-    res.status(500).json({ message: 'Error al registrar usuario', error: error.message });
+    res.status(500).send('No se pudo registrar, intenta nuevamente');
   }
 });
 
@@ -64,26 +64,26 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).json({ message: 'Correo y contraseña son requeridos' });
+      return res.status(400).send('Correo y contraseña son requeridos');
     }
 
     const pool = await getPool();
     const userResult = await pool.request().input('email', email).query('SELECT * FROM Usuarios WHERE email = @email');
     if (!userResult.recordset.length) {
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+      return res.status(404).send('Usuario no encontrado');
     }
 
     const user = userResult.recordset[0];
     const isValid = verifyPassword(password, user.password);
     if (!isValid) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+      return res.status(401).send('Credenciales inválidas');
     }
 
     const { password: _, ...safeUser } = user;
     res.json(safeUser);
   } catch (error) {
     console.error('Error al iniciar sesión:', error);
-    res.status(500).json({ message: 'Error al iniciar sesión', error: error.message });
+    res.status(500).send('No se pudo iniciar sesión, intenta nuevamente');
   }
 });
 

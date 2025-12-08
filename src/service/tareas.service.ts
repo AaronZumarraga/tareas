@@ -78,8 +78,8 @@ export async function login(email: string, password: string): Promise<Usuario> {
     body: JSON.stringify({ email, password })
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || 'Error al iniciar sesión');
+    const errorText = (await response.text()) || 'Error al iniciar sesión';
+    throw new Error(errorText);
   }
   return response.json();
 }
@@ -96,8 +96,8 @@ export async function register(data: {
     body: JSON.stringify(data)
   });
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(errorText || 'Error al registrar usuario');
+    const errorText = (await response.text()) || 'Error al registrar usuario';
+    throw new Error(errorText);
   }
   return response.json();
 }

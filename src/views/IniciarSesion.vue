@@ -35,6 +35,7 @@ const persistUser = (user: Usuario | null) => {
     localStorage.removeItem('auth_user')
   }
   authUser.value = user
+  window.dispatchEvent(new Event('auth-change'))
 }
 
 const handleLoginSubmit = async () => {
@@ -43,7 +44,7 @@ const handleLoginSubmit = async () => {
     const user = await login(loginEmail.value, loginPassword.value)
     persistUser(user)
   } catch (err: any) {
-    errorMsg.value = err?.message || 'No se pudo iniciar sesión'
+    errorMsg.value = 'No se pudo iniciar sesión'
   }
 }
 
@@ -63,7 +64,7 @@ const handleRegistroSubmit = async () => {
     persistUser(user)
     isRegistro.value = false
   } catch (err: any) {
-    errorMsg.value = err?.message || 'No se pudo registrar'
+    errorMsg.value = 'No se pudo registrar'
   }
 }
 
