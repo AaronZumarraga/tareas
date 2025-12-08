@@ -207,25 +207,13 @@ const getPriorityColor = (priority: string): string => {
   border-radius: 14px;
   margin-bottom: 14px;
   border: 2px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  transition: all 0.25s ease;
 }
 
 .task-item:hover {
   border-color: rgba(37, 99, 235, 0.25);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .task-item.completed {
@@ -251,32 +239,32 @@ const getPriorityColor = (priority: string): string => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   flex-shrink: 0;
   margin-top: 3px;
 }
 
 .checkbox:hover {
   border-color: #2563eb;
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 .checkbox.checked {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   border-color: #2563eb;
-  transform: scale(1.05);
 }
 
 .checkmark {
   color: white;
   font-size: 15px;
   font-weight: bold;
-  animation: checkPop 0.3s ease;
+  animation: checkPop 0.2s ease;
 }
 
 @keyframes checkPop {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  0% { transform: scale(0); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .task-text-wrapper {
@@ -299,6 +287,7 @@ const getPriorityColor = (priority: string): string => {
   overflow-wrap: break-word;
   flex: 1;
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .task-badges {
@@ -323,7 +312,7 @@ const getPriorityColor = (priority: string): string => {
 
 .task-status:hover,
 .task-priority:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .task-description {
@@ -332,6 +321,7 @@ const getPriorityColor = (priority: string): string => {
   margin: 6px 0;
   line-height: 1.5;
   word-wrap: break-word;
+  transition: all 0.2s ease;
 }
 
 .task-due-date {
@@ -339,11 +329,20 @@ const getPriorityColor = (priority: string): string => {
   font-size: 0.85rem;
   margin-top: 8px;
   font-weight: 500;
+  transition: all 0.2s ease;
 }
 
 .task-item.completed .task-text {
   text-decoration: line-through;
   color: #94a3b8;
+}
+
+.task-item.completed .task-description {
+  color: #94a3b8;
+}
+
+.task-item.completed .task-due-date {
+  color: #cbd5e1;
 }
 
 .task-edit-wrapper {
@@ -404,11 +403,11 @@ const getPriorityColor = (priority: string): string => {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .btn-action:hover {
-  transform: scale(1.15);
+  transform: scale(1.1);
 }
 
 .btn-edit:hover {

@@ -164,6 +164,7 @@ const tasksStats = computed(() => ({
 
 .task-list {
   min-height: 220px;
+  position: relative;
 }
 
 .empty-state {
@@ -196,26 +197,30 @@ const tasksStats = computed(() => ({
   font-size: 0.95rem;
 }
 
-/* List Transitions */
+/* List Transitions - Simplificadas y básicas */
 .list-move,
 .list-enter-active,
 .list-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
 }
 
 .list-enter-from {
-  opacity: 0;
-  transform: translateX(-40px);
+  transform: scale(0.95);
 }
 
 .list-leave-to {
-  opacity: 0;
-  transform: translateX(40px);
+  transform: scale(0.95);
 }
 
 .list-leave-active {
   position: absolute;
-  width: calc(100% - 44px);
+  width: 100%;
+  left: 0;
 }
 
 @media (max-width: 768px) {

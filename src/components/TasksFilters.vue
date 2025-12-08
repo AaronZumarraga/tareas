@@ -50,18 +50,6 @@ const filter = computed({
   padding: 10px;
   background: rgba(0, 0, 0, 0.025);
   border-radius: 14px;
-  animation: slideUp 0.4s ease;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .filter-btn {
@@ -74,20 +62,18 @@ const filter = computed({
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .filter-btn:hover {
   background: rgba(37, 99, 235, 0.1);
   color: #2563eb;
-  transform: translateY(-2px);
 }
 
 .filter-btn.active {
   background: #2563eb;
   color: white;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 @media (max-width: 768px) {
