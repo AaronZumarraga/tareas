@@ -1,12 +1,13 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\Tareas.vue -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
+import { fetchTareas, crearTarea, eliminarTarea } from '../service/tareas.service.ts'
 
 interface Task {
   id: number
@@ -18,10 +19,22 @@ const tasks = ref<Task[]>([])
 const filter = ref<'all' | 'active' | 'completed'>('all')
 let nextId = 1
 
-const handleAddTask = (taskText: string) => {
+const loadTasks = async () => {
+  const fetched = await fetchTareas()
+  tasks.value = fetched.map((tarea: any) => ({
+    id: tarea.id,
+    text: tarea.titulo,
+    completed: tarea.estado === 'Completada'
+  }))
+}
+
+onMounted(loadTasks)
+
+const handleAddTask = async (taskText: string) => {
+  const newTask = await crearTarea({ titulo: taskText, descripcion: '', estado: 'Pendiente' })
   tasks.value.push({
-    id: nextId++,
-    text: taskText,
+    id: newTask.id,
+    text: newTask.titulo,
     completed: false
   })
 }
@@ -33,7 +46,8 @@ const handleToggleTask = (id: number) => {
   }
 }
 
-const handleDeleteTask = (id: number) => {
+const handleDeleteTask = async (id: number) => {
+  await eliminarTarea(id)
   tasks.value = tasks.value.filter(t => t.id !== id)
 }
 

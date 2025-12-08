@@ -11,7 +11,9 @@ interface Tarea {
 export async function fetchTareas(): Promise<Tarea[]> {
   const response = await fetch(`${API_BASE}/tareas`);
   if (!response.ok) throw new Error('Error al obtener tareas');
-  return response.json();
+  const tareas = await response.json();
+  // Aquí puedes guardar las tareas en el estado si es necesario
+  return tareas;
 }
 
 export async function crearTarea(data: Omit<Tarea, 'id' | 'fechaCreacion'>): Promise<Tarea> {
@@ -20,8 +22,11 @@ export async function crearTarea(data: Omit<Tarea, 'id' | 'fechaCreacion'>): Pro
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  if (!response.ok) throw new Error('Error al crear tarea');
-  return response.json();
+  if (!response.ok) {
+    const errorText = await response.text(); // Obtener el texto del error
+    throw new Error(`Error al crear tarea: ${errorText}`); // Incluir el texto del error en la excepción
+  }
+  return response.json(); // Asegúrate de que esto devuelva el objeto creado
 }
 
 export async function eliminarTarea(id: number): Promise<void> {

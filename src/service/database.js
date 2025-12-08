@@ -3,7 +3,9 @@ import sql from 'mssql';
 const config = {
   server: 'PC-INOVA',
   database: 'bdd_prueba1',
-  authentication: { type: 'windows' },
+  authentication: {
+    type: 'ntlm', // Cambia a 'ntlm' para autenticación de Windows
+  },
   options: { trustServerCertificate: true, encrypt: false }
 };
 
