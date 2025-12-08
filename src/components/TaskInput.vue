@@ -3,15 +3,17 @@
 import { ref } from 'vue'
 
 const emit = defineEmits<{
-  addTask: [taskText: string]
+  addTask: [taskText: string, dueDate: string]
 }>()
 
 const taskText = ref('')
+const dueDate = ref('')
 
 const handleAdd = () => {
   if (taskText.value.trim()) {
-    emit('addTask', taskText.value)
+    emit('addTask', taskText.value, dueDate.value)
     taskText.value = ''
+    dueDate.value = ''
   }
 }
 </script>
@@ -28,6 +30,11 @@ const handleAdd = () => {
           @keyup.enter="handleAdd"
         />
       </div>
+      <input 
+        v-model="dueDate"
+        type="date"
+        class="due-date-input"
+      />
       <button @click="handleAdd" class="btn-add">
         <span class="btn-icon">+</span>
         <span class="btn-text">Agregar</span>
@@ -45,6 +52,22 @@ const handleAdd = () => {
   display: flex;
   gap: 12px;
   align-items: stretch;
+}
+
+.due-date-input {
+  padding: 14px 12px;
+  border: 2px solid rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  background: white;
+  color: #1e293b;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.due-date-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
 }
 
 .input-group {
@@ -119,6 +142,10 @@ const handleAdd = () => {
 @media (max-width: 768px) {
   .task-input {
     flex-direction: column;
+  }
+  
+  .due-date-input {
+    width: 100%;
   }
   
   .btn-add {

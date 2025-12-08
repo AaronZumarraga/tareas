@@ -7,42 +7,56 @@ import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
-import { fetchTareas, crearTarea, eliminarTarea } from '../service/tareas.service.ts'
+import { fetchTareas, crearTarea, eliminarTarea, updateTarea } from '../service/tareas.service.ts'
 
 interface Task {
   id: number
   text: string
   completed: boolean
+  dueDate?: string
 }
 
 const tasks = ref<Task[]>([])
 const filter = ref<'all' | 'active' | 'completed'>('all')
-let nextId = 1
 
 const loadTasks = async () => {
   const fetched = await fetchTareas()
   tasks.value = fetched.map((tarea: any) => ({
     id: tarea.id,
     text: tarea.titulo,
-    completed: tarea.estado === 'Completada'
+    completed: tarea.estadoId === 3, // 3 = Completada
+    dueDate: tarea.fechaVencimiento
   }))
 }
 
 onMounted(loadTasks)
 
-const handleAddTask = async (taskText: string) => {
-  const newTask = await crearTarea({ titulo: taskText, descripcion: '', estado: 'Pendiente' })
+const handleAddTask = async (taskText: string, dueDate: string) => {
+  const newTask = await crearTarea({ 
+    titulo: taskText, 
+    descripcion: '', 
+    estado: 'Pendiente',
+    fechaVencimiento: dueDate
+  })
   tasks.value.push({
     id: newTask.id,
     text: newTask.titulo,
-    completed: false
+    completed: false,
+    dueDate: newTask.fechaVencimiento
   })
 }
 
-const handleToggleTask = (id: number) => {
+const handleToggleTask = async (id: number) => {
   const task = tasks.value.find(t => t.id === id)
   if (task) {
     task.completed = !task.completed
+    const newState = task.completed ? 'Completada' : 'Pendiente'
+    await updateTarea(id, { 
+      titulo: task.text, 
+      descripcion: '', 
+      estado: newState,
+      fechaVencimiento: task.dueDate || ''
+    })
   }
 }
 
@@ -51,10 +65,18 @@ const handleDeleteTask = async (id: number) => {
   tasks.value = tasks.value.filter(t => t.id !== id)
 }
 
-const handleEditTask = (id: number, text: string) => {
+const handleEditTask = async (id: number, text: string, dueDate: string) => {
   const task = tasks.value.find(t => t.id === id)
   if (task) {
     task.text = text
+    task.dueDate = dueDate
+    const state = task.completed ? 'Completada' : 'Pendiente'
+    await updateTarea(id, { 
+      titulo: text, 
+      descripcion: '', 
+      estado: state,
+      fechaVencimiento: dueDate
+    })
   }
 }
 
@@ -103,6 +125,7 @@ const tasksStats = computed(() => ({
             :id="task.id"
             :text="task.text"
             :completed="task.completed"
+            :dueDate="task.dueDate"
             @toggle="handleToggleTask"
             @delete="handleDeleteTask"
             @edit="handleEditTask"

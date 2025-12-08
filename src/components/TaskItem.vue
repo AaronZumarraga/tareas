@@ -5,6 +5,7 @@ interface Props {
   id: number
   text: string
   completed: boolean
+  dueDate?: string
 }
 
 const props = defineProps<Props>()
@@ -12,11 +13,12 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   toggle: [id: number]
   delete: [id: number]
-  edit: [id: number, text: string]
+  edit: [id: number, text: string, dueDate: string]
 }>()
 
 const isEditing = ref(false)
 const editText = ref(props.text)
+const editDueDate = ref(props.dueDate || '')
 
 const handleToggle = () => {
   emit('toggle', props.id)
@@ -29,11 +31,12 @@ const handleDelete = () => {
 const startEdit = () => {
   isEditing.value = true
   editText.value = props.text
+  editDueDate.value = props.dueDate || ''
 }
 
 const saveEdit = () => {
   if (editText.value.trim()) {
-    emit('edit', props.id, editText.value)
+    emit('edit', props.id, editText.value, editDueDate.value)
     isEditing.value = false
   }
 }
@@ -41,6 +44,13 @@ const saveEdit = () => {
 const cancelEdit = () => {
   isEditing.value = false
   editText.value = props.text
+  editDueDate.value = props.dueDate || ''
+}
+
+const formatDate = (dateString: string): string => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 </script>
 
@@ -58,16 +68,25 @@ const cancelEdit = () => {
       
       <div class="task-text-wrapper" v-if="!isEditing">
         <p class="task-text">{{ text }}</p>
+        <p v-if="dueDate" class="task-due-date">📅 {{ formatDate(dueDate) }}</p>
       </div>
       
-      <input 
-        v-else
-        v-model="editText"
-        class="task-edit-input"
-        @keyup.enter="saveEdit"
-        @keyup.esc="cancelEdit"
-        autofocus
-      />
+      <div v-else class="task-edit-wrapper">
+        <input 
+          v-model="editText"
+          class="task-edit-input"
+          @keyup.enter="saveEdit"
+          @keyup.esc="cancelEdit"
+          autofocus
+        />
+        <input 
+          v-model="editDueDate"
+          type="date"
+          class="task-edit-date"
+          @keyup.enter="saveEdit"
+          @keyup.esc="cancelEdit"
+        />
+      </div>
     </div>
     
     <div class="task-actions">
@@ -194,9 +213,23 @@ const cancelEdit = () => {
   overflow-wrap: break-word;
 }
 
+.task-due-date {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
 .task-item.completed .task-text {
   text-decoration: line-through;
   color: #94a3b8;
+}
+
+.task-edit-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
 
 .task-edit-input {
@@ -205,6 +238,15 @@ const cancelEdit = () => {
   border: 2px solid #2563eb;
   border-radius: 8px;
   font-size: 0.95rem;
+  outline: none;
+  background: white;
+}
+
+.task-edit-date {
+  padding: 8px 12px;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  font-size: 0.85rem;
   outline: none;
   background: white;
 }
