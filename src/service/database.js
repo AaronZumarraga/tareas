@@ -6,7 +6,8 @@ const config = {
   driver: 'msnodesqlv8',
   options: {
     trustedConnection: true
-  }
+  },
+  connectionString: 'Driver={ODBC Driver 17 for SQL Server};Server=PC-INOVA;Database=bdd_prueba1;Trusted_Connection=Yes;'
 };
 
 export async function getPool() {

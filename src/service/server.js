@@ -20,17 +20,55 @@ app.get('/api/tareas', async (req, res) => {
 
 app.post('/api/tareas', async (req, res) => {
   try {
-    const { titulo, descripcion, estado } = req.body; // Asegúrate de que 'fechaCreacion' no sea necesario aquí
+    const { titulo, descripcion, estado } = req.body;
     const pool = await getPool();
+
+    // Buscar el estadoId correspondiente al nombre de estado
+    const estadoResult = await pool.request()
+      .input('nombre', estado)
+      .query('SELECT id FROM Estados WHERE nombre = @nombre');
+    if (estadoResult.recordset.length === 0) {
+      return res.status(400).json({ message: 'Estado no válido' });
+    }
+    const estadoId = estadoResult.recordset[0].id;
+
+    // Verificar si existe un usuario, si no, crearlo
+    let usuarioResult = await pool.request().query('SELECT TOP 1 id FROM Usuarios');
+    let usuarioId;
+    if (usuarioResult.recordset.length === 0) {
+      // Crear usuario por defecto
+      const newUser = await pool.request()
+        .input('nombre', 'Usuario')
+        .input('apellido', 'Ejemplo')
+        .input('email', 'usuario@ejemplo.com')
+        .input('password', 'password123')
+        .query(`
+          INSERT INTO Usuarios (nombre, apellido, email, password)
+          OUTPUT INSERTED.id
+          VALUES (@nombre, @apellido, @email, @password)
+        `);
+      usuarioId = newUser.recordset[0].id;
+    } else {
+      usuarioId = usuarioResult.recordset[0].id;
+    }
+
+    const prioridadId = 2; // Media
+
     const result = await pool.request()
       .input('titulo', titulo)
       .input('descripcion', descripcion)
-      .input('estado', estado)
-      .query('INSERT INTO Tareas (titulo, descripcion, estado) OUTPUT INSERTED.id VALUES (@titulo, @descripcion, @estado)');
-    
-    res.status(201).json({ id: result.recordset[0].id, message: 'Tarea creada' });
+      .input('usuarioId', usuarioId)
+      .input('estadoId', estadoId)
+      .input('prioridadId', prioridadId)
+      .query(`
+        INSERT INTO Tareas (titulo, descripcion, usuarioId, estadoId, prioridadId)
+        OUTPUT INSERTED.id, INSERTED.titulo
+        VALUES (@titulo, @descripcion, @usuarioId, @estadoId, @prioridadId)
+      `);
+
+    res.status(201).json({ id: result.recordset[0].id, titulo: result.recordset[0].titulo });
   } catch (error) {
-    console.error('Error al crear tarea:', error); // Log del error en el servidor
+    console.error('Error al crear tarea:', error);
     res.status(500).json({ message: 'Error al crear tarea', error: error.message });
   }
 });
