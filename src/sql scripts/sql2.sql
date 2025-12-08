@@ -1,5 +1,8 @@
 -- SELECT básicos para cada tabla
 
+USE bdd_prueba1;
+GO
+
 -- 1. Obtener todos los usuarios
 SELECT id, nombre, apellido, email, fechaCreacion, activo
 FROM Usuarios;
@@ -12,7 +15,6 @@ FROM Estados;
 SELECT id, nombre, nivel
 FROM Prioridades;
 
--- 4. Obtener todas las tareas
 -- 4. Obtener todas las tareas
 SELECT * FROM Tareas;
 SELECT id, titulo, descripcion, usuarioId, estadoId, prioridadId, 
