@@ -1,5 +1,13 @@
 const API_BASE = 'http://localhost:3000/api';
 
+export interface Usuario {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  fechaCreacion?: string;
+}
+
 export interface Tarea {
   id: number;
   titulo: string;
@@ -61,4 +69,35 @@ export async function updateTarea(id: number, data: {
 export async function eliminarTarea(id: number): Promise<void> {
   const response = await fetch(`${API_BASE}/tareas/${id}`, { method: 'DELETE' });
   if (!response.ok) throw new Error('Error al eliminar tarea');
+}
+
+export async function login(email: string, password: string): Promise<Usuario> {
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Error al iniciar sesión');
+  }
+  return response.json();
+}
+
+export async function register(data: {
+  nombre: string;
+  apellido: string;
+  email: string;
+  password: string;
+}): Promise<Usuario> {
+  const response = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Error al registrar usuario');
+  }
+  return response.json();
 }

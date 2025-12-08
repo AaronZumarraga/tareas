@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import crypto from 'crypto';
 import { getPool } from './database.js';
 
 const app = express();
@@ -10,6 +11,80 @@ app.use(express.json());
 
 app.get('/', (req, res) => {
   res.json({ status: 'running' });
+});
+
+const HASH_ITER = 100_000;
+const HASH_LEN = 64;
+const HASH_ALGO = 'sha512';
+const hashPassword = (password, salt = crypto.randomBytes(16).toString('hex')) => {
+  const hash = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
+  return `${salt}:${hash}`;
+};
+const verifyPassword = (password, stored) => {
+  const [salt, hash] = stored.split(':');
+  const test = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
+  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(test, 'hex'));
+};
+
+// Auth: registro
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { nombre, apellido, email, password } = req.body;
+    if (!nombre || !apellido || !email || !password) {
+      return res.status(400).json({ message: 'Todos los campos son requeridos' });
+    }
+
+    const pool = await getPool();
+    const exists = await pool.request().input('email', email).query('SELECT id FROM Usuarios WHERE email = @email');
+    if (exists.recordset.length) {
+      return res.status(409).json({ message: 'El correo ya está registrado' });
+    }
+
+    const hashed = hashPassword(password);
+    const inserted = await pool.request()
+      .input('nombre', nombre)
+      .input('apellido', apellido)
+      .input('email', email)
+      .input('password', hashed)
+      .query(`
+        INSERT INTO Usuarios (nombre, apellido, email, password)
+        OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.apellido, INSERTED.email, INSERTED.fechaCreacion
+        VALUES (@nombre, @apellido, @email, @password)
+      `);
+
+    res.status(201).json(inserted.recordset[0]);
+  } catch (error) {
+    console.error('Error al registrar usuario:', error);
+    res.status(500).json({ message: 'Error al registrar usuario', error: error.message });
+  }
+});
+
+// Auth: login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Correo y contraseña son requeridos' });
+    }
+
+    const pool = await getPool();
+    const userResult = await pool.request().input('email', email).query('SELECT * FROM Usuarios WHERE email = @email');
+    if (!userResult.recordset.length) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const user = userResult.recordset[0];
+    const isValid = verifyPassword(password, user.password);
+    if (!isValid) {
+      return res.status(401).json({ message: 'Credenciales inválidas' });
+    }
+
+    const { password: _, ...safeUser } = user;
+    res.json(safeUser);
+  } catch (error) {
+    console.error('Error al iniciar sesión:', error);
+    res.status(500).json({ message: 'Error al iniciar sesión', error: error.message });
+  }
 });
 
 app.get('/api/tareas', async (req, res) => {
@@ -69,11 +144,12 @@ app.post('/api/tareas', async (req, res) => {
     let usuarioId;
     
     if (usuarioResult.recordset.length === 0) {
+      const hashedDefault = hashPassword('password123');
       const newUser = await pool.request()
         .input('nombre', 'Usuario')
         .input('apellido', 'Ejemplo')
         .input('email', 'usuario@ejemplo.com')
-        .input('password', 'password123')
+        .input('password', hashedDefault)
         .query(`
           INSERT INTO Usuarios (nombre, apellido, email, password)
           OUTPUT INSERTED.id

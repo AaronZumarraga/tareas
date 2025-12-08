@@ -4,6 +4,7 @@ USE bdd_prueba1;
 GO
 
 -- 1. Obtener todos los usuarios
+SELECT * FROM Usuarios;
 SELECT id, nombre, apellido, email, fechaCreacion, activo
 FROM Usuarios;
 

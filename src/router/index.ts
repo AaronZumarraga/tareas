@@ -23,8 +23,9 @@ const router = createRouter({
       component: AcercaDe
     },
     {
-      path: '/iniciar-sesion',
-      name: 'iniciar-sesion',
+      path: '/perfil',
+      alias: '/iniciar-sesion',
+      name: 'perfil',
       component: IniciarSesion
     }
   ],

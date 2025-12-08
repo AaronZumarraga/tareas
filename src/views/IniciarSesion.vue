@@ -1,13 +1,16 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\IniciarSesion.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
+import { login, register, type Usuario } from '../service/tareas.service'
 
 const isRegistro = ref(false)
+const authUser = ref<Usuario | null>(null)
+const errorMsg = ref('')
 
 // Datos del formulario de login
 const loginEmail = ref('')
@@ -22,33 +25,80 @@ const registroPasswordConfirm = ref('')
 
 const toggleForm = () => {
   isRegistro.value = !isRegistro.value
+  errorMsg.value = ''
 }
 
-const handleLoginSubmit = () => {
-  console.log('Login:', { email: loginEmail.value, password: loginPassword.value })
+const persistUser = (user: Usuario | null) => {
+  if (user) {
+    localStorage.setItem('auth_user', JSON.stringify(user))
+  } else {
+    localStorage.removeItem('auth_user')
+  }
+  authUser.value = user
 }
 
-const handleRegistroSubmit = () => {
-  console.log('Registro:', {
-    nombre: registroNombre.value,
-    apellido: registroApellido.value,
-    email: registroEmail.value,
-    password: registroPassword.value
-  })
+const handleLoginSubmit = async () => {
+  errorMsg.value = ''
+  try {
+    const user = await login(loginEmail.value, loginPassword.value)
+    persistUser(user)
+  } catch (err: any) {
+    errorMsg.value = err?.message || 'No se pudo iniciar sesión'
+  }
 }
+
+const handleRegistroSubmit = async () => {
+  errorMsg.value = ''
+  if (registroPassword.value !== registroPasswordConfirm.value) {
+    errorMsg.value = 'Las contraseñas no coinciden'
+    return
+  }
+  try {
+    const user = await register({
+      nombre: registroNombre.value,
+      apellido: registroApellido.value,
+      email: registroEmail.value,
+      password: registroPassword.value
+    })
+    persistUser(user)
+    isRegistro.value = false
+  } catch (err: any) {
+    errorMsg.value = err?.message || 'No se pudo registrar'
+  }
+}
+
+const cerrarSesion = () => {
+  persistUser(null)
+}
+
+onMounted(() => {
+  const saved = localStorage.getItem('auth_user')
+  if (saved) authUser.value = JSON.parse(saved)
+})
 </script>
 
 <template>
   <div class="iniciar-sesion">
     <GlassCard max-width="500px">
       <PageTitle 
-        :title="isRegistro ? 'Crear Cuenta' : 'Iniciar Sesión'" 
-        :subtitle="isRegistro ? 'Regístrate para comenzar' : 'Accede a tu cuenta'" 
+        :title="authUser ? 'Perfil' : (isRegistro ? 'Crear Cuenta' : 'Iniciar Sesión')" 
+        :subtitle="authUser ? 'Datos de tu cuenta' : (isRegistro ? 'Regístrate para comenzar' : 'Accede a tu cuenta')" 
       />
+
+      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+
+      <div v-if="authUser" class="perfil">
+        <p><strong>Nombre:</strong> {{ authUser.nombre }} {{ authUser.apellido }}</p>
+        <p><strong>Correo:</strong> {{ authUser.email }}</p>
+        <p v-if="authUser.fechaCreacion"><strong>Creado:</strong> {{ new Date(authUser.fechaCreacion).toLocaleString() }}</p>
+        <BaseButton variant="primary" full-width @click="cerrarSesion">
+          Cerrar sesión
+        </BaseButton>
+      </div>
 
       <!-- Formulario de Login -->
       <AuthForm 
-        v-if="!isRegistro" 
+        v-else-if="!isRegistro" 
         :is-registro="false"
         @submit="handleLoginSubmit"
         @toggle-form="toggleForm"
@@ -135,6 +185,20 @@ const handleRegistroSubmit = () => {
   padding-top: 40px;
   padding-bottom: 40px; /* Add bottom padding for footer spacing */
   min-height: auto; /* Remove fixed min-height */
+}
+
+.error {
+  color: #ef4444;
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.perfil {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: #1e293b;
 }
 
 @media (max-width: 768px) {
