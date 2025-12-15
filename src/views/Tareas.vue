@@ -8,9 +8,11 @@ import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
 import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea } from '../service/tareas.service.ts'
+import { ref as authRef } from 'vue'; // Importa ref para manejar la autenticación
 
 const tasks = ref<Tarea[]>([])
 const filter = ref<'all' | 'active' | 'completed'>('all')
+const authUser = authRef<any>(null) // Referencia para el usuario autenticado
 
 const loadTasks = async () => {
   try {
@@ -21,7 +23,11 @@ const loadTasks = async () => {
   }
 }
 
-onMounted(loadTasks)
+onMounted(() => {
+  loadTasks()
+  const saved = localStorage.getItem('auth_user')
+  authUser.value = saved ? JSON.parse(saved) : null
+})
 
 const handleAddTask = async (taskData: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }) => {
   try {
@@ -96,22 +102,26 @@ const tasksStats = computed(() => ({
   <div class="tareas">
     <GlassCard max-width="800px" text-align="left">
       <PageTitle title="Mis Tareas" subtitle="Organiza tu día de forma efectiva" />
-      <TaskInput @add-task="handleAddTask" />
+      <TaskInput v-if="authUser" @add-task="handleAddTask" />
+
+      <div v-if="!authUser" class="empty-state">
+        <p>Por favor, inicia sesión o regístrate para ver tus tareas.</p>
+      </div>
 
       <TasksStats
-        v-if="tasks.length > 0"
+        v-if="authUser && tasks.length > 0"
         :total="tasksStats.total"
         :active="tasksStats.active"
         :completed="tasksStats.completed"
       />
 
       <TasksFilters
-        v-if="tasks.length > 0"
+        v-if="authUser && tasks.length > 0"
         :model-value="filter"
         @update:modelValue="filter = $event"
       />
 
-      <div class="task-list">
+      <div class="task-list" v-if="authUser">
         <TransitionGroup name="list">
           <TaskItem
             v-for="task in filteredTasks"
