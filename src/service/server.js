@@ -49,6 +49,12 @@ app.get('/api/health', async (req, res) => {
 const HASH_ITER = 100_000;
 const HASH_LEN = 64;
 const HASH_ALGO = 'sha512';
+const TOKEN_SECRET = 'tu_clave_secreta_super_segura_cambiar_en_produccion';
+const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas en ms
+
+// Almacenar tokens activos en memoria (en producción usar Redis o BD)
+const activeTokens = new Map();
+
 const hashPassword = (password, salt = crypto.randomBytes(16).toString('hex')) => {
   const hash = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
   return `${salt}:${hash}`;
@@ -57,6 +63,43 @@ const verifyPassword = (password, stored) => {
   const [salt, hash] = stored.split(':');
   const test = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(test, 'hex'));
+};
+
+// Generar token JWT simple
+const generateToken = (userId) => {
+  const payload = {
+    userId,
+    iat: Date.now(),
+    exp: Date.now() + TOKEN_EXPIRY
+  };
+  const token = Buffer.from(JSON.stringify(payload)).toString('base64');
+  activeTokens.set(token, payload);
+  return token;
+};
+
+// Validar token
+const verifyToken = (token) => {
+  const payload = activeTokens.get(token);
+  if (!payload) return null;
+  if (payload.exp < Date.now()) {
+    activeTokens.delete(token);
+    return null;
+  }
+  return payload;
+};
+
+// Middleware para validar token
+const validateToken = (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) {
+    return res.status(401).json({ message: 'Token requerido' });
+  }
+  const payload = verifyToken(token);
+  if (!payload) {
+    return res.status(401).json({ message: 'Token inválido o expirado' });
+  }
+  req.userId = payload.userId;
+  next();
 };
 
 // Auth: registro
@@ -92,7 +135,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Auth: login
+// Auth: login (MODIFICADO)
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -112,15 +155,49 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).send('Credenciales inválidas');
     }
 
+    // Generar token
+    const token = generateToken(user.id);
+
     const { password: _, ...safeUser } = user;
-    res.json(safeUser);
+    res.json({
+      ...safeUser,
+      token
+    });
   } catch (error) {
     console.error('Error al iniciar sesión:', error);
     res.status(500).send('No se pudo iniciar sesión, intenta nuevamente');
   }
 });
 
-app.get('/api/tareas', async (req, res) => {
+// Auth: logout (NUEVO)
+app.post('/api/auth/logout', validateToken, (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
+    activeTokens.delete(token);
+  }
+  res.json({ message: 'Sesión cerrada' });
+});
+
+// Auth: verificar token (NUEVO)
+app.get('/api/auth/verify', validateToken, async (req, res) => {
+  try {
+    const pool = await getPool();
+    const userResult = await pool.request()
+      .input('id', req.userId)
+      .query('SELECT id, nombre, apellido, email, fechaCreacion FROM Usuarios WHERE id = @id');
+    
+    if (!userResult.recordset.length) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json(userResult.recordset[0]);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al verificar token' });
+  }
+});
+
+// Aplicar validación de token a rutas protegidas
+app.get('/api/tareas', validateToken, async (req, res) => {
   try {
     const pool = await getPool();
     const result = await pool.request().query(`
@@ -140,7 +217,7 @@ app.get('/api/tareas', async (req, res) => {
   }
 });
 
-app.post('/api/tareas', async (req, res) => {
+app.post('/api/tareas', validateToken, async (req, res) => {
   try {
     const { titulo, descripcion, estado, fechaVencimiento, prioridad } = req.body;
 
@@ -242,7 +319,7 @@ app.post('/api/tareas', async (req, res) => {
   }
 });
 
-app.put('/api/tareas/:id', async (req, res) => {
+app.put('/api/tareas/:id', validateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { titulo, descripcion, estado, prioridad, fechaVencimiento } = req.body;
@@ -325,7 +402,7 @@ app.put('/api/tareas/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/tareas/:id', async (req, res) => {
+app.delete('/api/tareas/:id', validateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const pool = await getPool();

@@ -6,11 +6,12 @@ import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
-import { login, register, type Usuario } from '../service/tareas.service'
+import { login, logout, register, verifyToken, type Usuario } from '../service/tareas.service'
 
 const isRegistro = ref(false)
 const authUser = ref<Usuario | null>(null)
 const errorMsg = ref('')
+const isLoading = ref(false)
 
 // Datos del formulario de login
 const loginEmail = ref('')
@@ -33,6 +34,7 @@ const persistUser = (user: Usuario | null) => {
     localStorage.setItem('auth_user', JSON.stringify(user))
   } else {
     localStorage.removeItem('auth_user')
+    localStorage.removeItem('auth_token')
   }
   authUser.value = user
   window.dispatchEvent(new Event('auth-change'))
@@ -40,11 +42,14 @@ const persistUser = (user: Usuario | null) => {
 
 const handleLoginSubmit = async () => {
   errorMsg.value = ''
+  isLoading.value = true
   try {
     const user = await login(loginEmail.value, loginPassword.value)
     persistUser(user)
   } catch (err: any) {
-    errorMsg.value = 'No se pudo iniciar sesión'
+    errorMsg.value = err.message || 'No se pudo iniciar sesión'
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -68,13 +73,30 @@ const handleRegistroSubmit = async () => {
   }
 }
 
-const cerrarSesion = () => {
+const cerrarSesion = async () => {
+  isLoading.value = true
+  await logout()
   persistUser(null)
+  isLoading.value = false
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Verificar si hay token válido
   const saved = localStorage.getItem('auth_user')
-  if (saved) authUser.value = JSON.parse(saved)
+  const token = localStorage.getItem('auth_token')
+
+  if (saved && token) {
+    isLoading.value = true
+    const verified = await verifyToken()
+    if (verified) {
+      authUser.value = verified
+      localStorage.setItem('auth_user', JSON.stringify(verified))
+    } else {
+      // Token expirado
+      persistUser(null)
+    }
+    isLoading.value = false
+  }
 })
 </script>
 
@@ -88,7 +110,9 @@ onMounted(() => {
 
       <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
-      <div v-if="authUser" class="perfil">
+      <div v-if="isLoading" class="loading">Verificando sesión...</div>
+
+      <div v-else-if="authUser" class="perfil">
         <p><strong>Nombre:</strong> {{ authUser.nombre }} {{ authUser.apellido }}</p>
         <p><strong>Correo:</strong> {{ authUser.email }}</p>
         <p v-if="authUser.fechaCreacion"><strong>Creado:</strong> {{ new Date(authUser.fechaCreacion).toLocaleString() }}</p>
@@ -200,6 +224,13 @@ onMounted(() => {
   flex-direction: column;
   gap: 10px;
   color: #1e293b;
+}
+
+.loading {
+  text-align: center;
+  color: #2563eb;
+  padding: 20px;
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
