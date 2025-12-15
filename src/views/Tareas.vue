@@ -7,7 +7,7 @@ import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
-import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea } from '../services/tareas.service.ts'
+import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea } from '../service/tareas.service.ts'
 import { ref as authRef } from 'vue'; // Importa ref para manejar la autenticación
 
 const tasks = ref<Tarea[]>([])

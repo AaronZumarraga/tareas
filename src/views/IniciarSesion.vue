@@ -6,7 +6,7 @@ import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
-import { login, logout, register, verifyToken, type Usuario } from '../services/tareas.service'
+import { login, logout, register, verifyToken, type Usuario } from '../service/tareas.service'
 
 const isRegistro = ref(false)
 const authUser = ref<Usuario | null>(null)
