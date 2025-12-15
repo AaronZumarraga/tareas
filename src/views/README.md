@@ -1,16 +1,19 @@
 # Views
 Páginas completas conectadas al router. Representan rutas y flujos.
 
-## Ejemplos actuales
-- `Inicio.vue`
-- `Tareas.vue`
-- `AcercaDe.vue`
+## Vistas disponibles
+- `Inicio.vue` - Página de bienvenida
+- `Tareas.vue` - Gestión y listado de tareas con filtros
+- `AcercaDe.vue` - Información sobre la aplicación
+- `IniciarSesion.vue` - Autenticación (login/registro) y perfil de usuario
 
-## Características
-- Componen layout + componentes reutilizables
-- Pueden orquestar llamadas a servicios y composables
-- No deben contener helpers puros
+## Características comunes
+- Utilizan `GlassCard` para layout principal
+- Usan `PageTitle` para títulos consistentes
+- Implementan responsive design con media queries
+- Delegan lógica de negocio a composables y servicios
 
-## Buenas prácticas
-- Mantener la vista ligera; delegar lógica repetida a composables
-- Nombrar según la ruta o propósito (`PerfilUsuario.vue`)
+## Buenas prácticas aplicadas
+- Mantener vistas ligeras; lógica compleja en composables (`useAuth`, `taskService`)
+- Nombrar según la ruta o propósito
+- Separar presentación de lógica de negocio
