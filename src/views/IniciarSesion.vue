@@ -1,11 +1,11 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\IniciarSesion.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
-import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
+import PageSection from '../components/PageSection.vue'
 import { useAuth } from '../service/tareas.service'
 
 const { user, login, register, logout } = useAuth()
@@ -34,42 +34,39 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="iniciar-sesion">
-    <GlassCard max-width="500px">
-      <PageTitle 
-        :title="user ? 'Perfil' : (isRegistro ? 'Crear Cuenta' : 'Iniciar Sesión')" 
-        :subtitle="user ? 'Datos de tu cuenta' : 'Bienvenido a TaskManager'" 
-      />
+  <PageSection max-width="500px">
+    <PageTitle 
+      :title="user ? 'Perfil' : (isRegistro ? 'Crear Cuenta' : 'Iniciar Sesión')" 
+      :subtitle="user ? 'Datos de tu cuenta' : 'Bienvenido a TaskManager'" 
+    />
 
-      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+    <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
-      <div v-if="user" class="perfil">
-        <p><strong>Nombre:</strong> {{ user.nombre }} {{ user.apellido }}</p>
-        <p><strong>Correo:</strong> {{ user.email }}</p>
-        <BaseButton variant="primary" full-width @click="logout">Cerrar sesión</BaseButton>
-      </div>
+    <div v-if="user" class="perfil">
+      <p><strong>Nombre:</strong> {{ user.nombre }} {{ user.apellido }}</p>
+      <p><strong>Correo:</strong> {{ user.email }}</p>
+      <BaseButton variant="primary" full-width @click="logout">Cerrar sesión</BaseButton>
+    </div>
 
-      <AuthForm v-else :is-registro="isRegistro" @submit="handleSubmit" @toggle-form="isRegistro = !isRegistro; errorMsg = ''">
-        <template v-if="isRegistro">
-          <FormInput id="nombre" v-model="formData.nombre" label="Nombre" />
-          <FormInput id="apellido" v-model="formData.apellido" label="Apellido" />
-        </template>
-        
-        <FormInput id="email" v-model="formData.email" label="Correo" type="email" />
-        <FormInput id="pass" v-model="formData.password" label="Contraseña" type="password" />
-        
-        <FormInput v-if="isRegistro" id="conf" v-model="formData.confirm" label="Confirmar" type="password" />
+    <AuthForm v-else :is-registro="isRegistro" @submit="handleSubmit" @toggle-form="isRegistro = !isRegistro; errorMsg = ''">
+      <template v-if="isRegistro">
+        <FormInput id="nombre" v-model="formData.nombre" label="Nombre" />
+        <FormInput id="apellido" v-model="formData.apellido" label="Apellido" />
+      </template>
+      
+      <FormInput id="email" v-model="formData.email" label="Correo" type="email" />
+      <FormInput id="pass" v-model="formData.password" label="Contraseña" type="password" />
+      
+      <FormInput v-if="isRegistro" id="conf" v-model="formData.confirm" label="Confirmar" type="password" />
 
-        <BaseButton type="submit" variant="primary" full-width :disabled="isLoading">
-          {{ isLoading ? 'Procesando...' : (isRegistro ? 'Crear Usuario' : 'Iniciar Sesión') }}
-        </BaseButton>
-      </AuthForm>
-    </GlassCard>
-  </div>
+      <BaseButton type="submit" variant="primary" full-width :disabled="isLoading">
+        {{ isLoading ? 'Procesando...' : (isRegistro ? 'Crear Usuario' : 'Iniciar Sesión') }}
+      </BaseButton>
+    </AuthForm>
+  </PageSection>
 </template>
 
 <style scoped>
-.iniciar-sesion { display: flex; justify-content: center; padding: 40px 0; }
 .error { color: #ef4444; text-align: center; margin-bottom: 10px; }
 .perfil { display: flex; flex-direction: column; gap: 10px; color: #1e293b; }
 </style>

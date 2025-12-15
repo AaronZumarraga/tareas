@@ -1,38 +1,27 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\Inicio.vue -->
 <script setup lang="ts">
-import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
+import PageSection from '../components/PageSection.vue'
 </script>
 
 <template>
-  <div class="inicio">
-    <GlassCard max-width="600px" padding="50px 40px">
-      <PageTitle 
-        title="Bienvenido" 
-        subtitle="Gestiona tus tareas de forma simple" 
-      />
-      <div class="features">
-        <div class="feature-item">Simple</div>
-        <div class="feature-item">Efectivo</div>
-        <div class="feature-item">Rápido</div>
-      </div>
-    </GlassCard>
-  </div>
+  <PageSection max-width="600px" padding="50px 40px">
+    <PageTitle 
+      title="Bienvenido" 
+      subtitle="Gestiona tus tareas de forma simple" 
+    />
+    <div class="features">
+      <div class="feature-item">Simple</div>
+      <div class="feature-item">Efectivo</div>
+      <div class="feature-item">Rápido</div>
+    </div>
+  </PageSection>
 </template>
 
 <style scoped>
-.inicio {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 60px;
-  padding-bottom: 40px; /* Add bottom padding for footer spacing */
-  flex-direction: column; /* Changed to column for better responsiveness */
-}
-
 .features {
   display: flex;
-  flex-wrap: wrap; /* Allow wrapping for smaller screens */
+  flex-wrap: wrap;
   gap: 16px;
   justify-content: center;
   margin-top: 40px;
@@ -45,7 +34,7 @@ import PageTitle from '../components/PageTitle.vue'
   font-size: 0.9rem;
   color: #475569;
   font-weight: 500;
-  flex: 1 1 100px; /* Allow items to grow and shrink */
+  flex: 1 1 100px;
 }
 
 @media (max-width: 768px) {

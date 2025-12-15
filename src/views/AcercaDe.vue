@@ -1,42 +1,33 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\AcercaDe.vue -->
 <script setup lang="ts">
-import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
+import PageSection from '../components/PageSection.vue'
 </script>
 
 <template>
-  <div class="acerca-de">
-    <GlassCard max-width="700px">
-      <PageTitle title="Acerca de" subtitle="TaskManager v1.0" />
-      <div class="info-section">
-        <div class="info-item">
-          <h3>Tecnologías</h3>
-          <p>Vue 3, TypeScript, Vue Router</p>
-        </div>
-        <div class="info-item">
-          <h3>Diseño</h3>
-          <p>Glassmorphism minimalista</p>
-        </div>
-        <div class="info-item">
-          <h3>Propósito</h3>
-          <p>Gestión simple de tareas diarias</p>
-        </div>
+  <PageSection max-width="700px">
+    <PageTitle title="Acerca de" subtitle="TaskManager v1.0" />
+    <div class="info-section">
+      <div class="info-item">
+        <h3>Tecnologías</h3>
+        <p>Vue 3, TypeScript, Vue Router</p>
       </div>
-    </GlassCard>
-  </div>
+      <div class="info-item">
+        <h3>Diseño</h3>
+        <p>Glassmorphism minimalista</p>
+      </div>
+      <div class="info-item">
+        <h3>Propósito</h3>
+        <p>Gestión simple de tareas diarias</p>
+      </div>
+    </div>
+  </PageSection>
 </template>
 
 <style scoped>
-.acerca-de {
-  max-width: 90%; /* Adjusted for responsiveness */
-  margin: 0 auto;
-  padding-top: 20px;
-  padding-bottom: 40px; /* Add bottom padding for footer spacing */
-}
-
 .info-section {
   display: flex;
-  flex-direction: column; /* Changed to column for better responsiveness */
+  flex-direction: column;
   gap: 16px;
   margin-top: 40px;
 }
@@ -58,11 +49,5 @@ import PageTitle from '../components/PageTitle.vue'
 .info-item p {
   color: #64748b;
   font-size: 0.95rem;
-}
-
-@media (max-width: 768px) {
-  .acerca-de {
-    padding-bottom: 30px;
-  }
 }
 </style>
