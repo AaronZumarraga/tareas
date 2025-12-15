@@ -35,7 +35,12 @@ const filteredTasks = computed(() => {
         <TransitionGroup name="list">
           <TaskItem
             v-for="task in filteredTasks" :key="task.id"
-            v-bind="task"
+            v-bind="{
+              ...task,
+              descripcion: task.descripcion ?? '',
+              prioridad: task.prioridad ?? '',
+              fechaVencimiento: task.fechaVencimiento ?? ''
+            }"
             :completed="task.estado === 'Completada'"
             :dueDate="task.fechaVencimiento"
             @toggle="toggleTask" @delete="deleteTask" @edit="editTask"
