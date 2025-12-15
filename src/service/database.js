@@ -8,6 +8,7 @@ export async function getPool() {
   if (!poolInstance) {
     try {
       poolInstance = await sql.connect(DB_CONFIG);
+      console.log('Conexión a Base de Datos establecida correctamente');
     } catch (err) {
       console.error('Error conectando a BD:', err);
       poolInstance = null;

@@ -39,15 +39,16 @@ export const UserRepository = {
 };
 
 export const TaskRepository = {
-  async findAll() {
+  async findAll(userId) {
     const res = await runQuery(`
       SELECT t.id, t.titulo, t.descripcion, t.usuarioId, e.nombre as estado, p.nombre as prioridad, 
              t.completed, t.fechaCreacion, t.fechaVencimiento 
       FROM Tareas t
       LEFT JOIN Estados e ON t.estadoId = e.id
       LEFT JOIN Prioridades p ON t.prioridadId = p.id
+      WHERE t.usuarioId = @userId
       ORDER BY t.fechaCreacion DESC
-    `);
+    `, { userId });
     return res.recordset;
   },
 
