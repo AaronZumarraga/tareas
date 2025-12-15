@@ -7,7 +7,7 @@ import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
 import PageSection from '../components/PageSection.vue'
-import { useAuth } from '../service/tareas.service'
+import { useAuth } from '../composables/useAuth'
 
 const { user, login, register, logout } = useAuth()
 const router = useRouter()

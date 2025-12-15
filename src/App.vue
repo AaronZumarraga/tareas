@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { useAuth } from './service/tareas.service'
+import { useAuth } from './composables/useAuth'
 
 const { user, verifySession } = useAuth()
 const isMenuOpen = ref(false)
