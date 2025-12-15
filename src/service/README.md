@@ -48,16 +48,35 @@ SQL Server
 ## Instrucciones para ejecutar el servidor
 
 1. Asegúrate de tener Node.js y npm instalados.
-2. Navega a la carpeta del proyecto.
-3. Ejecuta el siguiente comando para iniciar el servidor:
+2. Navega a la carpeta raíz del proyecto:
    ```bash
-   node src/service/server.js
+   cd c:\Users\AaronZumarraga\Downloads\tareas
    ```
-4. Luego, en otra terminal, ejecuta:
+3. **Opción 1: Ejecutar manualmente en dos terminales**
+   - Terminal 1 - Desde la raíz del proyecto, inicia el servidor Node.js:
+     ```bash
+     cd c:\Users\AaronZumarraga\Downloads\tareas
+     node src/service/server.js
+     ```
+   - Terminal 2 - Desde la raíz del proyecto, inicia Vue.js:
+     ```bash
+     cd c:\Users\AaronZumarraga\Downloads\tareas
+     npm run dev
+     ```
+4. **Opción 2: Ejecutar con un único comando desde la raíz (si está configurado)**
    ```bash
-   npm run dev
+   cd c:\Users\AaronZumarraga\Downloads\tareas
+   npm run serve
    ```
 5. Accede a la aplicación en `http://localhost:5173/` y verifica la consola del navegador para mensajes.
+
+## Comandos disponibles
+
+Todos los comandos deben ejecutarse desde la **raíz del proyecto** (`c:\Users\AaronZumarraga\Downloads\tareas`):
+
+- `npm run dev` - Inicia el servidor de desarrollo de Vue.js (puerto 5173)
+- `npm run serve` - Inicia ambos servidores (Node.js + Vue.js) simultáneamente
+- `node src/service/server.js` - Inicia solo el servidor Node.js (puerto 3000)
 
 ## Endpoints disponibles
 
