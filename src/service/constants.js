@@ -5,12 +5,14 @@ export const HASH_CONFIG = {
 };
 
 export const TOKEN_CONFIG = {
-  SECRET: 'tu_clave_secreta_super_segura_cambiar_en_produccion', // TODO: Usar process.env.JWT_SECRET
+  // BUENA PRÁCTICA: En producción, nunca hardcodear secretos. Usar process.env.JWT_SECRET
+  SECRET: 'tu_clave_secreta_super_segura_cambiar_en_produccion', 
   EXPIRY: 24 * 60 * 60 * 1000 // 24 horas
 };
 
 export const DB_CONFIG = {
-  server: 'PC-INOVA', // TODO: Usar process.env.DB_SERVER
+  // BUENA PRÁCTICA: Usar variables de entorno para credenciales de BD (process.env.DB_HOST, etc.)
+  server: 'PC-INOVA', 
   database: 'bdd_prueba1', // TODO: Usar process.env.DB_NAME
   driver: 'msnodesqlv8',
   options: { trustedConnection: true },
