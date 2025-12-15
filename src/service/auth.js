@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import { HASH_CONFIG, TOKEN_CONFIG } from './constants.js';
 
+// TODO: En producción, usar Redis o JWT stateless (jsonwebtoken) en lugar de memoria local
+// para evitar perder sesiones al reiniciar el servidor.
 const activeTokens = new Map();
 
 export const hashPassword = (password, salt = crypto.randomBytes(16).toString('hex')) => {

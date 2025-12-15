@@ -90,3 +90,24 @@ Todos los comandos deben ejecutarse desde la **raíz del proyecto** (`c:\Users\A
 - `GET http://localhost:3000/api/health` - Estado del servidor y base de datos
 - `GET http://localhost:3000/api/tareas` - Obtener todas las tareas
 - `POST http://localhost:3000/api/tareas` - Crear nueva tarea
+
+## Consideraciones para Producción
+
+Si deseas desplegar este backend en un entorno productivo, aplica las siguientes mejoras:
+
+1. **Variables de Entorno (.env)**
+   - Nunca dejes credenciales en el código (`constants.js`).
+   - Usa la librería `dotenv` para cargar secretos (`DB_PASSWORD`, `JWT_SECRET`) desde el sistema.
+
+2. **Seguridad**
+   - **Tokens**: Reemplaza el almacenamiento en memoria (`Map`) por **JWT (JSON Web Tokens)** firmados con librería `jsonwebtoken`. Esto permite que el servidor escale horizontalmente.
+   - **Headers**: Implementa `helmet` para proteger contra vulnerabilidades web comunes.
+   - **Rate Limiting**: Usa `express-rate-limit` para evitar ataques de fuerza bruta o DoS.
+   - **CORS**: Restringe los orígenes permitidos a tu dominio real, no uses `*`.
+
+3. **Base de Datos**
+   - El driver actual asume autenticación de Windows local. En producción, usa autenticación SQL (usuario/password) si la BD está en otro servidor.
+
+4. **Logging y Monitoreo**
+   - Reemplaza `console.log` por librerías como `winston` o `pino` para logs estructurados.
+   - Usa **PM2** o **Docker** para gestionar el proceso de Node.js y asegurar que se reinicie si falla.

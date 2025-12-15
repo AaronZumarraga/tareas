@@ -11,7 +11,10 @@ import { HTTP_STATUS } from './constants.js';
 const app = express();
 const PORT = 3000;
 
+// TODO: En producción, configurar origen específico: { origin: 'https://mi-app.com' }
 app.use(cors());
+// TODO: Agregar 'helmet' para headers de seguridad
+// TODO: Agregar 'express-rate-limit' para limitar peticiones por IP
 app.use(express.json());
 
 // Middleware para loguear todas las requests

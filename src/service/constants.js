@@ -5,13 +5,13 @@ export const HASH_CONFIG = {
 };
 
 export const TOKEN_CONFIG = {
-  SECRET: 'tu_clave_secreta_super_segura_cambiar_en_produccion',
+  SECRET: 'tu_clave_secreta_super_segura_cambiar_en_produccion', // TODO: Usar process.env.JWT_SECRET
   EXPIRY: 24 * 60 * 60 * 1000 // 24 horas
 };
 
 export const DB_CONFIG = {
-  server: 'PC-INOVA',
-  database: 'bdd_prueba1',
+  server: 'PC-INOVA', // TODO: Usar process.env.DB_SERVER
+  database: 'bdd_prueba1', // TODO: Usar process.env.DB_NAME
   driver: 'msnodesqlv8',
   options: { trustedConnection: true },
   connectionString: 'Driver={ODBC Driver 17 for SQL Server};Server=PC-INOVA;Database=bdd_prueba1;Trusted_Connection=Yes;'
