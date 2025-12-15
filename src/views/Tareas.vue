@@ -85,16 +85,15 @@ const stats = computed(() => ({
           />
         </TransitionGroup>
         
-        <EmptyState v-if="tasks.length === 0" icon="📝" title="No hay tareas aún" subtitle="Agrega tu primera tarea para comenzar" />
+        <EmptyState v-if="tasks.length === 0" title="No hay tareas aún" subtitle="Agrega tu primera tarea para comenzar" />
         <EmptyState
           v-else-if="filteredTasks.length === 0"
-          :icon="filter === 'active' ? '🎯' : '✅'"
           :title="`No hay tareas ${filter === 'active' ? 'activas' : 'completadas'}`"
         />
       </div>
     </template>
 
-    <EmptyState v-else icon="🔒" title="Inicia sesión" subtitle="Por favor, inicia sesión o regístrate para ver tus tareas." />
+    <EmptyState v-else title="Inicia sesión" subtitle="Por favor, inicia sesión o regístrate para ver tus tareas." />
   </PageSection>
 </template>
 
