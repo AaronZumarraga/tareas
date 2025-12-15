@@ -1,24 +1,8 @@
 import { ref, computed, watchEffect } from 'vue'
 import { authStore } from '../store/auth.store'
-import { http } from '../helpers/http.helper'
+import { TaskService, type Tarea } from '../service/api.services'
 
-export type Tarea = {
-  id: number
-  titulo: string
-  descripcion?: string
-  estado: string
-  prioridad?: string
-  completed: boolean
-  fechaVencimiento?: string
-  fechaCreacion: string
-}
-
-const taskService = {
-  getAll: () => http<Tarea[]>('/tareas'),
-  create: (data: any) => http<Tarea>('/tareas', { method: 'POST', body: data }),
-  update: (id: number, data: any) => http<Tarea>(`/tareas/${id}`, { method: 'PUT', body: data }),
-  delete: (id: number) => http(`/tareas/${id}`, { method: 'DELETE' })
-}
+export type { Tarea }
 
 export const useTasks = () => {
   const tasks = ref<Tarea[]>([])
@@ -29,7 +13,7 @@ export const useTasks = () => {
     if (authStore.user.value) {
       try {
         isLoading.value = true
-        tasks.value = await taskService.getAll()
+        tasks.value = await TaskService.getAll()
       } catch (e) {
         console.error(e)
       } finally {
@@ -48,7 +32,7 @@ export const useTasks = () => {
 
   const addTask = async (data: any) => {
     try {
-      const newTask = await taskService.create(data)
+      const newTask = await TaskService.create(data)
       tasks.value.push(newTask)
     } catch (e) {
       console.error(e)
@@ -60,7 +44,7 @@ export const useTasks = () => {
     const task = tasks.value.find(t => t.id === id)
     if (!task) return
     try {
-      const updated = await taskService.update(id, {
+      const updated = await TaskService.update(id, {
         ...task,
         estado: task.estado === 'Completada' ? 'Pendiente' : 'Completada'
       })
@@ -72,7 +56,7 @@ export const useTasks = () => {
 
   const deleteTask = async (id: number) => {
     try {
-      await taskService.delete(id)
+      await TaskService.delete(id)
       tasks.value = tasks.value.filter(t => t.id !== id)
     } catch (e) {
       console.error(e)
@@ -81,7 +65,7 @@ export const useTasks = () => {
 
   const editTask = async (id: number, data: any) => {
     try {
-      const updated = await taskService.update(id, data)
+      const updated = await TaskService.update(id, data)
       const task = tasks.value.find(t => t.id === id)
       if (task) Object.assign(task, updated)
     } catch (e) {
