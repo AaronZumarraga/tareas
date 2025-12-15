@@ -48,11 +48,16 @@ SQL Server
 ## Instrucciones para ejecutar el servidor
 
 1. Asegúrate de tener Node.js y npm instalados.
-2. Navega a la carpeta raíz del proyecto:
+2. **Instala las dependencias del proyecto:**
+   ```bash
+   cd c:\Users\AaronZumarraga\Downloads\tareas
+   npm install
+   ```
+3. Navega a la carpeta raíz del proyecto:
    ```bash
    cd c:\Users\AaronZumarraga\Downloads\tareas
    ```
-3. **Opción 1: Ejecutar manualmente en dos terminales**
+4. **Opción 1: Ejecutar manualmente en dos terminales**
    - Terminal 1 - Desde la raíz del proyecto, inicia el servidor Node.js:
      ```bash
      cd c:\Users\AaronZumarraga\Downloads\tareas
@@ -63,12 +68,12 @@ SQL Server
      cd c:\Users\AaronZumarraga\Downloads\tareas
      npm run dev
      ```
-4. **Opción 2: Ejecutar con un único comando desde la raíz (si está configurado)**
+5. **Opción 2: Ejecutar con un único comando desde la raíz (si está configurado)**
    ```bash
    cd c:\Users\AaronZumarraga\Downloads\tareas
    npm run serve
    ```
-5. Accede a la aplicación en `http://localhost:5173/` y verifica la consola del navegador para mensajes.
+6. Accede a la aplicación en `http://localhost:5173/` y verifica la consola del navegador para mensajes.
 
 ## Comandos disponibles
 
