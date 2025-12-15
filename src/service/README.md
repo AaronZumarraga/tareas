@@ -5,45 +5,56 @@ Capa que comunica entre frontend (Vue.js) y backend (Node.js).
 
 ```
 src/service/
-├── database.js          (Conexión a BD - Node.js/Backend)
-├── tareas.service.ts    (Cliente HTTP - Vue.js/Frontend)
+├── auth.js              (Lógica de seguridad: hashing y tokens)
+├── constants.js         (Configuración y constantes globales)
+├── database.js          (Conexión a BD - Singleton)
+├── repository.js        (Capa de acceso a datos - SQL Queries)
+├── server.js            (Entry point: Express App y Rutas)
 └── README.md
 ```
 
 ## Responsabilidades por archivo
 
-### database.js (Backend - Node.js)
-- Conecta directamente a SQL Server usando `mssql`
-- Gestiona el pool de conexiones
-- **Solo se ejecuta en el servidor** (nunca en el navegador)
-- Exports: `connectDB()`, `getPool()`, `closePool()`
+### server.js
+- Punto de entrada del servidor backend.
+- Configura Express, CORS y Middlewares (Logging, Error Handling).
+- Define las rutas de la API (`/api/...`).
+- Orquesta la respuesta HTTP usando los repositorios.
 
-### tareas.service.ts (Frontend - Vue.js)
-- Cliente HTTP que consume APIs del backend
-- **Nunca accede directamente a la BD**
-- Comunica vía HTTP/REST con Node.js
-- Encapsula llamadas como `fetchTareas()`, `crearTarea(payload)`
+### repository.js
+- **Data Access Object (DAO)**: Contiene toda la lógica SQL.
+- `UserRepository`: Consultas relacionadas con usuarios.
+- `TaskRepository`: CRUD de tareas.
+- Separa la lógica de base de datos de la lógica de rutas.
+
+### auth.js
+- Manejo de contraseñas (hashing con `crypto.pbkdf2`).
+- Gestión de tokens (generación, validación e invalidación).
+- Middleware de protección de rutas (`validateTokenMiddleware`).
+
+### database.js
+- Conecta a SQL Server usando `mssql/msnodesqlv8`.
+- Implementa patrón **Singleton** para el pool de conexiones.
+
+### constants.js
+- Centraliza configuraciones (DB, Hashing, Tokens).
+- Define códigos de estado HTTP y valores por defecto.
 
 ## Flujo de datos
 
 ```
 Vue.js Component
     ↓
-tareas.service.ts (HTTP request)
+HTTP Request (Fetch/Axios)
     ↓
-Node.js API Route
+server.js (Express Route + Auth Middleware)
     ↓
-database.js (SQL Query)
+repository.js (SQL Logic)
+    ↓
+database.js (Connection Pool)
     ↓
 SQL Server
 ```
-
-## Buenas prácticas
-- Un archivo service por dominio: `tareas.service.ts`, `auth.service.ts`, etc.
-- Manejar errores y parsing de respuestas en el service
-- Retornar siempre datos tipados (TypeScript interfaces)
-- No formatear datos para UI en el service (eso va en helpers/composables)
-- **Seguridad**: El backend valida y controla acceso a la BD
 
 ## Instrucciones para ejecutar el servidor
 
@@ -53,43 +64,26 @@ SQL Server
    cd c:\Users\AaronZumarraga\Downloads\tareas
    npm install
    ```
-3. Navega a la carpeta raíz del proyecto:
+3. **Ejecutar el servidor backend:**
    ```bash
-   cd c:\Users\AaronZumarraga\Downloads\tareas
+   node src/service/server.js
    ```
-4. **Opción 1: Ejecutar manualmente en dos terminales**
-   - Terminal 1 - Desde la raíz del proyecto, inicia el servidor Node.js:
-     ```bash
-     cd c:\Users\AaronZumarraga\Downloads\tareas
-     node src/service/server.js
-     ```
-   - Terminal 2 - Desde la raíz del proyecto, inicia Vue.js:
-     ```bash
-     cd c:\Users\AaronZumarraga\Downloads\tareas
-     npm run dev
-     ```
-5. **Opción 2: Ejecutar con un único comando desde la raíz (si está configurado)**
-   ```bash
-   cd c:\Users\AaronZumarraga\Downloads\tareas
-   npm run serve
-   ```
-6. Accede a la aplicación en `http://localhost:5173/` y verifica la consola del navegador para mensajes.
-
-## Comandos disponibles
-
-Todos los comandos deben ejecutarse desde la **raíz del proyecto** (`c:\Users\AaronZumarraga\Downloads\tareas`):
-
-- `npm run dev` - Inicia el servidor de desarrollo de Vue.js (puerto 5173)
-- `npm run serve` - Inicia ambos servidores (Node.js + Vue.js) simultáneamente
-- `node src/service/server.js` - Inicia solo el servidor Node.js (puerto 3000)
+   El servidor iniciará en el puerto 3000.
 
 ## Endpoints disponibles
 
-- `GET http://localhost:3000/` - Estado simple del servidor (respuesta: `{ "status": "running" }`)
-- `GET http://localhost:3000/api` - Información de la API (nombre, versión, uptime)
-- `GET http://localhost:3000/api/health` - Estado del servidor y base de datos
-- `GET http://localhost:3000/api/tareas` - Obtener todas las tareas
-- `POST http://localhost:3000/api/tareas` - Crear nueva tarea
+### Públicos
+- `GET /api/health` - Estado del servidor y conexión a BD.
+- `POST /api/auth/register` - Registro de nuevos usuarios.
+- `POST /api/auth/login` - Inicio de sesión (retorna token).
+
+### Protegidos (Requieren Header `Authorization: Bearer <token>`)
+- `POST /api/auth/logout` - Cerrar sesión (invalida token).
+- `GET /api/auth/verify` - Verificar validez del token actual.
+- `GET /api/tareas` - Obtener tareas del usuario autenticado.
+- `POST /api/tareas` - Crear nueva tarea.
+- `PUT /api/tareas/:id` - Actualizar tarea existente.
+- `DELETE /api/tareas/:id` - Eliminar tarea.
 
 ## Consideraciones para Producción
 
@@ -100,14 +94,12 @@ Si deseas desplegar este backend en un entorno productivo, aplica las siguientes
    - Usa la librería `dotenv` para cargar secretos (`DB_PASSWORD`, `JWT_SECRET`) desde el sistema.
 
 2. **Seguridad**
-   - **Tokens**: Reemplaza el almacenamiento en memoria (`Map`) por **JWT (JSON Web Tokens)** firmados con librería `jsonwebtoken`. Esto permite que el servidor escale horizontalmente.
-   - **Headers**: Implementa `helmet` para proteger contra vulnerabilidades web comunes.
-   - **Rate Limiting**: Usa `express-rate-limit` para evitar ataques de fuerza bruta o DoS.
-   - **CORS**: Restringe los orígenes permitidos a tu dominio real, no uses `*`.
+   - **Tokens**: Actualmente se usa un almacenamiento en memoria (`Map`) y tokens base64 simples. Migrar a **JWT (JSON Web Tokens)** estándar con librería `jsonwebtoken` para statelessness.
+   - **Headers**: Implementa `helmet`.
+   - **Rate Limiting**: Usa `express-rate-limit`.
 
 3. **Base de Datos**
-   - El driver actual asume autenticación de Windows local. En producción, usa autenticación SQL (usuario/password) si la BD está en otro servidor.
+   - El driver actual asume autenticación de Windows local (`msnodesqlv8`). En producción, usa autenticación SQL (usuario/password) si la BD está en otro servidor.
 
-4. **Logging y Monitoreo**
-   - Reemplaza `console.log` por librerías como `winston` o `pino` para logs estructurados.
-   - Usa **PM2** o **Docker** para gestionar el proceso de Node.js y asegurar que se reinicie si falla.
+4. **Logging**
+   - Reemplaza `console.log` por librerías como `winston` o `pino`.
