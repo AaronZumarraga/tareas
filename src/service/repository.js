@@ -1,153 +1,106 @@
 import { getPool } from './database.js';
-import { hashPassword } from './auth.js';
-import { DEFAULT_USER, CATALOG_DEFAULTS } from './constants.js';
+import { CATALOG_DEFAULTS } from './constants.js';
 
-const TASK_FIELDS = `
-  t.id, t.titulo, t.descripcion, t.usuarioId, 
-  e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
-  t.completed, t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
-`;
+// Helper privado para consultas (DRY)
+const runQuery = async (query, params = {}) => {
+  const pool = await getPool();
+  const request = pool.request();
+  Object.entries(params).forEach(([key, val]) => request.input(key, val));
+  return request.query(query);
+};
 
-const TASK_JOINS = `
-  LEFT JOIN Estados e ON t.estadoId = e.id
-  LEFT JOIN Prioridades p ON t.prioridadId = p.id
-`;
-
-async function getCatalogId(pool, table, name, defaultId = null) {
+const getCatalogId = async (table, name, defaultId = null) => {
   if (!name) return defaultId;
-  const result = await pool.request().input('nombre', name).query(`SELECT id FROM ${table} WHERE nombre = @nombre`);
-  return result.recordset.length ? result.recordset[0].id : defaultId;
-}
+  const res = await runQuery(`SELECT id FROM ${table} WHERE nombre = @nombre`, { nombre: name });
+  return res.recordset.length ? res.recordset[0].id : defaultId;
+};
+
+// --- Repositorios ---
 
 export const UserRepository = {
   async findByEmail(email) {
-    const pool = await getPool();
-    const result = await pool.request().input('email', email).query('SELECT * FROM Usuarios WHERE email = @email');
-    return result.recordset[0];
+    const res = await runQuery('SELECT * FROM Usuarios WHERE email = @email', { email });
+    return res.recordset[0];
   },
 
   async findById(id) {
-    const pool = await getPool();
-    const result = await pool.request().input('id', id).query('SELECT id, nombre, apellido, email, fechaCreacion FROM Usuarios WHERE id = @id');
-    return result.recordset[0];
+    const res = await runQuery('SELECT id, nombre, apellido, email, fechaCreacion FROM Usuarios WHERE id = @id', { id });
+    return res.recordset[0];
   },
 
-  async create({ nombre, apellido, email, password }) {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('nombre', nombre)
-      .input('apellido', apellido)
-      .input('email', email)
-      .input('password', password)
-      .query(`
-        INSERT INTO Usuarios (nombre, apellido, email, password)
-        OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.apellido, INSERTED.email, INSERTED.fechaCreacion
-        VALUES (@nombre, @apellido, @email, @password)
-      `);
-    return result.recordset[0];
-  },
-
-  async getFallbackUser() {
-    const pool = await getPool();
-    const result = await pool.request().query('SELECT TOP 1 id FROM Usuarios');
-    
-    if (result.recordset.length > 0) return result.recordset[0].id;
-
-    const hashedDefault = hashPassword(DEFAULT_USER.password);
-    const newUser = await this.create({
-      nombre: DEFAULT_USER.nombre,
-      apellido: DEFAULT_USER.apellido,
-      email: DEFAULT_USER.email,
-      password: hashedDefault
-    });
-    return newUser.id;
+  async create(user) {
+    const res = await runQuery(`
+      INSERT INTO Usuarios (nombre, apellido, email, password)
+      OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.apellido, INSERTED.email, INSERTED.fechaCreacion
+      VALUES (@nombre, @apellido, @email, @password)
+    `, user);
+    return res.recordset[0];
   }
 };
 
 export const TaskRepository = {
   async findAll() {
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT ${TASK_FIELDS}
+    const res = await runQuery(`
+      SELECT t.id, t.titulo, t.descripcion, t.usuarioId, e.nombre as estado, p.nombre as prioridad, 
+             t.completed, t.fechaCreacion, t.fechaVencimiento 
       FROM Tareas t
-      ${TASK_JOINS}
+      LEFT JOIN Estados e ON t.estadoId = e.id
+      LEFT JOIN Prioridades p ON t.prioridadId = p.id
       ORDER BY t.fechaCreacion DESC
     `);
-    return result.recordset;
+    return res.recordset;
   },
 
   async findById(id) {
-    const pool = await getPool();
-    const result = await pool.request().input('id', id).query(`
-      SELECT ${TASK_FIELDS}
+    const res = await runQuery(`
+      SELECT t.id, t.titulo, t.descripcion, t.usuarioId, e.nombre as estado, p.nombre as prioridad, 
+             t.completed, t.fechaCreacion, t.fechaVencimiento 
       FROM Tareas t
-      ${TASK_JOINS}
+      LEFT JOIN Estados e ON t.estadoId = e.id
+      LEFT JOIN Prioridades p ON t.prioridadId = p.id
       WHERE t.id = @id
-    `);
-    return result.recordset[0];
+    `, { id });
+    return res.recordset[0];
   },
 
   async create({ titulo, descripcion, usuarioId, estado, prioridad, fechaVencimiento }) {
-    const pool = await getPool();
-    
-    const estadoId = await getCatalogId(pool, 'Estados', estado);
+    const estadoId = await getCatalogId('Estados', estado);
     if (!estadoId) throw new Error('Estado no válido');
-
-    const prioridadId = await getCatalogId(pool, 'Prioridades', prioridad, CATALOG_DEFAULTS.prioridad);
-    const completed = estado === 'Completada' ? 1 : 0;
-    const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
-
-    const result = await pool.request()
-      .input('titulo', titulo)
-      .input('descripcion', descripcion || '')
-      .input('usuarioId', usuarioId)
-      .input('estadoId', estadoId)
-      .input('prioridadId', prioridadId)
-      .input('completed', completed)
-      .input('fechaVencimiento', fechaVencimiento || null)
-      .query(`
-        INSERT INTO Tareas (titulo, descripcion, usuarioId, estadoId, prioridadId, completed, fechaVencimiento, fechaCompletacion)
-        OUTPUT INSERTED.id
-        VALUES (@titulo, @descripcion, @usuarioId, @estadoId, @prioridadId, @completed, @fechaVencimiento, ${fechaCompletacion})
-      `);
+    const prioridadId = await getCatalogId('Prioridades', prioridad, CATALOG_DEFAULTS.prioridad);
     
-    return this.findById(result.recordset[0].id);
+    const res = await runQuery(`
+      INSERT INTO Tareas (titulo, descripcion, usuarioId, estadoId, prioridadId, completed, fechaVencimiento, fechaCompletacion)
+      OUTPUT INSERTED.id
+      VALUES (@titulo, @descripcion, @usuarioId, @estadoId, @prioridadId, @completed, @fechaVencimiento, ${estado === 'Completada' ? 'GETDATE()' : 'NULL'})
+    `, { 
+      titulo, descripcion: descripcion || '', usuarioId, estadoId, prioridadId, 
+      completed: estado === 'Completada' ? 1 : 0, fechaVencimiento: fechaVencimiento || null 
+    });
+    
+    return this.findById(res.recordset[0].id);
   },
 
   async update(id, { titulo, descripcion, estado, prioridad, fechaVencimiento }) {
-    const pool = await getPool();
-    
-    const estadoId = await getCatalogId(pool, 'Estados', estado);
-    if (!estadoId) throw new Error('Estado no válido');
+    const estadoId = await getCatalogId('Estados', estado);
+    const prioridadId = await getCatalogId('Prioridades', prioridad, CATALOG_DEFAULTS.prioridad);
 
-    const prioridadId = await getCatalogId(pool, 'Prioridades', prioridad, CATALOG_DEFAULTS.prioridad);
-    const completed = estado === 'Completada' ? 1 : 0;
-    const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
+    const res = await runQuery(`
+      UPDATE Tareas
+      SET titulo = @titulo, descripcion = @descripcion, estadoId = @estadoId,
+          prioridadId = @prioridadId, completed = @completed,
+          fechaVencimiento = @fechaVencimiento, fechaModificacion = GETDATE(),
+          fechaCompletacion = ${estado === 'Completada' ? 'GETDATE()' : 'NULL'}
+      WHERE id = @id
+    `, {
+      id, titulo, descripcion: descripcion || '', estadoId, prioridadId,
+      completed: estado === 'Completada' ? 1 : 0, fechaVencimiento: fechaVencimiento || null
+    });
 
-    const result = await pool.request()
-      .input('id', id)
-      .input('titulo', titulo)
-      .input('descripcion', descripcion || '')
-      .input('estadoId', estadoId)
-      .input('prioridadId', prioridadId)
-      .input('completed', completed)
-      .input('fechaVencimiento', fechaVencimiento || null)
-      .query(`
-        UPDATE Tareas
-        SET titulo = @titulo, descripcion = @descripcion, estadoId = @estadoId,
-            prioridadId = @prioridadId, completed = @completed,
-            fechaVencimiento = @fechaVencimiento, fechaModificacion = GETDATE(),
-            fechaCompletacion = ${fechaCompletacion}
-        WHERE id = @id
-      `);
-
-    if (result.rowsAffected[0] === 0) return null;
-    return this.findById(id);
+    return res.rowsAffected[0] > 0 ? this.findById(id) : null;
   },
 
   async delete(id) {
-    const pool = await getPool();
-    const result = await pool.request().input('id', id).query('DELETE FROM Tareas WHERE id = @id');
-    return result.rowsAffected[0] > 0;
+    const res = await runQuery('DELETE FROM Tareas WHERE id = @id', { id });
+    return res.rowsAffected[0] > 0;
   }
 };

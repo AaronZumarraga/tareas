@@ -1,36 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { readStoredUser, AUTH_CHANGE_EVENT } from './service/tareas.service'
+import { useAuth } from './service/tareas.service'
 
+const { user, verifySession } = useAuth()
 const isMenuOpen = ref(false)
-const authUser = ref<any>(null)
-
-const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value
-}
-
-const loadAuth = () => {
-  authUser.value = readStoredUser()
-}
-
-const handleStorage = (e: StorageEvent) => {
-  if (e.key === 'auth_user') loadAuth()
-}
-const handleAuthChange = () => loadAuth()
-
-onMounted(() => {
-  loadAuth()
-  window.addEventListener('storage', handleStorage)
-  window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('storage', handleStorage)
-  window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
-})
-
 const currentYear = computed(() => new Date().getFullYear())
+
+onMounted(() => verifySession())
 </script>
 
 <template>
@@ -38,18 +15,15 @@ const currentYear = computed(() => new Date().getFullYear())
     <header>
       <div class="container">
         <h1 class="logo">TaskManager</h1>
-        <button class="hamburger" @click="toggleMenu">
+        <button class="hamburger" @click="isMenuOpen = !isMenuOpen">
           <span :class="{'open': isMenuOpen}">☰</span>
         </button>
         <nav :class="{ 'open': isMenuOpen }">
           <RouterLink to="/" class="nav-link">Inicio</RouterLink>
           <RouterLink to="/tareas" class="nav-link">Tareas</RouterLink>
           <RouterLink to="/acerca-de" class="nav-link">Acerca de</RouterLink>
-          <RouterLink
-            :to="authUser ? '/perfil' : '/iniciar-sesion'"
-            class="nav-link"
-          >
-            {{ authUser ? 'Perfil' : 'Iniciar Sesión' }}
+          <RouterLink :to="user ? '/perfil' : '/iniciar-sesion'" class="nav-link">
+            {{ user ? 'Perfil' : 'Iniciar Sesión' }}
           </RouterLink>
         </nav>
       </div>

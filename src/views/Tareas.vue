@@ -1,109 +1,63 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\Tareas.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
-import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea, readStoredUser, AUTH_CHANGE_EVENT } from '../service/tareas.service'
+import { taskService, useAuth, type Tarea } from '../service/tareas.service'
 
+const { user } = useAuth()
 const tasks = ref<Tarea[]>([])
 const filter = ref<'all' | 'active' | 'completed'>('all')
-const authUser = ref<any>(null) // Referencia para el usuario autenticado
 
-const loadTasks = async () => {
-  if (!authUser.value) return
-  try {
-    const fetched = await fetchTareas()
-    tasks.value = fetched
-  } catch (error) {
-    console.error('Error cargando tareas:', error)
-  }
-}
-
-const syncAuth = () => {
-  authUser.value = readStoredUser()
-  if (!authUser.value) {
+// Patrón Observer: Reacciona automáticamente a cambios en el usuario
+watchEffect(async () => {
+  if (user.value) {
+    try { tasks.value = await taskService.getAll() } 
+    catch (e) { console.error(e) }
+  } else {
     tasks.value = []
-    return
   }
-  loadTasks()
-}
-
-onMounted(() => {
-  syncAuth()
-  window.addEventListener(AUTH_CHANGE_EVENT, syncAuth)
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener(AUTH_CHANGE_EVENT, syncAuth)
-})
-
-const handleAddTask = async (taskData: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }) => {
-  try {
-    const newTask = await crearTarea(taskData)
-    tasks.value.push(newTask)
-  } catch (error) {
-    console.error('Error creando tarea:', error)
-  }
+const handleAddTask = async (data: any) => {
+  try { tasks.value.push(await taskService.create(data)) } catch (e) { console.error(e) }
 }
 
 const handleToggleTask = async (id: number) => {
   const task = tasks.value.find(t => t.id === id)
-  if (task) {
-    const newState = task.estado === 'Completada' ? 'Pendiente' : 'Completada'
-    try {
-      const updated = await updateTarea(id, {
-        titulo: task.titulo,
-        descripcion: task.descripcion,
-        estado: newState,
-        prioridad: task.prioridad,
-        fechaVencimiento: task.fechaVencimiento || ''
-      })
-      const index = tasks.value.findIndex(t => t.id === id)
-      if (index !== -1) {
-        tasks.value[index] = updated
-      }
-    } catch (error) {
-      console.error('Error actualizando tarea:', error)
-    }
-  }
+  if (!task) return
+  try {
+    const updated = await taskService.update(id, { ...task, estado: task.estado === 'Completada' ? 'Pendiente' : 'Completada' })
+    Object.assign(task, updated)
+  } catch (e) { console.error(e) }
 }
 
 const handleDeleteTask = async (id: number) => {
   try {
-    await eliminarTarea(id)
+    await taskService.delete(id)
     tasks.value = tasks.value.filter(t => t.id !== id)
-  } catch (error) {
-    console.error('Error eliminando tarea:', error)
-  }
+  } catch (e) { console.error(e) }
 }
 
-const handleEditTask = async (id: number, data: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }) => {
+const handleEditTask = async (id: number, data: any) => {
   try {
-    const updated = await updateTarea(id, data)
-    const index = tasks.value.findIndex(t => t.id === id)
-    if (index !== -1) {
-      tasks.value[index] = updated
-    }
-  } catch (error) {
-    console.error('Error editando tarea:', error)
-  }
+    const updated = await taskService.update(id, data)
+    const task = tasks.value.find(t => t.id === id)
+    if (task) Object.assign(task, updated)
+  } catch (e) { console.error(e) }
 }
 
 const filteredTasks = computed(() => {
-  if (filter.value === 'active') {
-    return tasks.value.filter(t => t.estado !== 'Completada')
-  }
-  if (filter.value === 'completed') {
-    return tasks.value.filter(t => t.estado === 'Completada')
-  }
+  if (filter.value === 'active') return tasks.value.filter(t => t.estado !== 'Completada')
+  if (filter.value === 'completed') return tasks.value.filter(t => t.estado === 'Completada')
   return tasks.value
 })
 
-const tasksStats = computed(() => ({
+const stats = computed(() => ({
   total: tasks.value.length,
   active: tasks.value.filter(t => t.estado !== 'Completada').length,
   completed: tasks.value.filter(t => t.estado === 'Completada').length
@@ -114,53 +68,36 @@ const tasksStats = computed(() => ({
   <div class="tareas">
     <GlassCard max-width="800px" text-align="left">
       <PageTitle title="Mis Tareas" subtitle="Organiza tu día de forma efectiva" />
-      <TaskInput v-if="authUser" @add-task="handleAddTask" />
+      
+      <template v-if="user">
+        <TaskInput @add-task="handleAddTask" />
+        <TasksStats v-if="tasks.length" :total="stats.total" :active="stats.active" :completed="stats.completed" />
+        <TasksFilters v-if="tasks.length" :model-value="filter" @update:modelValue="filter = $event" />
+        
+        <div class="task-list">
+          <TransitionGroup name="list">
+            <TaskItem
+              v-for="task in filteredTasks" :key="task.id"
+              v-bind="task"
+              :completed="task.estado === 'Completada'"
+              :dueDate="task.fechaVencimiento"
+              @toggle="handleToggleTask" @delete="handleDeleteTask" @edit="handleEditTask"
+            />
+          </TransitionGroup>
+          
+          <div v-if="tasks.length === 0" class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p class="empty-title">No hay tareas aún</p>
+          </div>
+          <div v-else-if="filteredTasks.length === 0" class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <p class="empty-title">No hay tareas {{ filter === 'active' ? 'activas' : 'completadas' }}</p>
+          </div>
+        </div>
+      </template>
 
-      <div v-if="!authUser" class="empty-state">
+      <div v-else class="empty-state">
         <p>Por favor, inicia sesión o regístrate para ver tus tareas.</p>
-      </div>
-
-      <TasksStats
-        v-if="authUser && tasks.length > 0"
-        :total="tasksStats.total"
-        :active="tasksStats.active"
-        :completed="tasksStats.completed"
-      />
-
-      <TasksFilters
-        v-if="authUser && tasks.length > 0"
-        :model-value="filter"
-        @update:modelValue="filter = $event"
-      />
-
-      <div class="task-list" v-if="authUser">
-        <TransitionGroup name="list">
-          <TaskItem
-            v-for="task in filteredTasks"
-            :key="task.id"
-            :id="task.id"
-            :titulo="task.titulo"
-            :descripcion="task.descripcion"
-            :estado="task.estado"
-            :prioridad="task.prioridad"
-            :completed="task.estado === 'Completada'"
-            :dueDate="task.fechaVencimiento"
-            @toggle="handleToggleTask"
-            @delete="handleDeleteTask"
-            @edit="handleEditTask"
-          />
-        </TransitionGroup>
-
-        <div v-if="tasks.length === 0" class="empty-state">
-          <div class="empty-icon">📝</div>
-          <p class="empty-title">No hay tareas aún</p>
-          <p class="empty-subtitle">Comienza agregando tu primera tarea</p>
-        </div>
-
-        <div v-else-if="filteredTasks.length === 0" class="empty-state">
-          <div class="empty-icon">🎯</div>
-          <p class="empty-title">No hay tareas {{ filter === 'active' ? 'activas' : 'completadas' }}</p>
-        </div>
       </div>
     </GlassCard>
   </div>

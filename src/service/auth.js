@@ -1,9 +1,7 @@
 import crypto from 'crypto';
 import { HASH_CONFIG, TOKEN_CONFIG } from './constants.js';
 
-// TODO: En producción, usar Redis o JWT stateless (jsonwebtoken) en lugar de memoria local
-// para evitar perder sesiones al reiniciar el servidor.
-// BUENA PRÁCTICA: Usar librería 'jsonwebtoken' estándar y almacenar sesiones en Redis si se requiere invalidación.
+// Token Store Pattern: Almacenamiento simple en memoria
 const activeTokens = new Map();
 
 export const hashPassword = (password, salt = crypto.randomBytes(16).toString('hex')) => {
@@ -26,8 +24,7 @@ export const generateToken = (userId) => {
 
 export const verifyToken = (token) => {
   const payload = activeTokens.get(token);
-  if (!payload) return null;
-  if (payload.exp < Date.now()) {
+  if (!payload || payload.exp < Date.now()) {
     activeTokens.delete(token);
     return null;
   }
@@ -38,19 +35,13 @@ export const invalidateToken = (token) => activeTokens.delete(token);
 
 export const validateTokenMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    console.log(`Intento de acceso sin token en: ${req.path}`);
-    return res.status(401).json({ message: 'Token requerido' });
-  }
-  
-  const payload = verifyToken(token);
+  const payload = token ? verifyToken(token) : null;
+
   if (!payload) {
-    console.log(`Token inválido/expirado en: ${req.path}`);
-    return res.status(401).json({ message: 'Token inválido o expirado' });
+    return res.status(401).json({ message: 'Token requerido o inválido' });
   }
   
   req.userId = payload.userId;
   req.token = token;
-  console.log(`Token válido para usuario ID: ${payload.userId} en: ${req.path}`);
   next();
 };

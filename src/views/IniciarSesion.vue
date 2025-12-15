@@ -1,193 +1,67 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\IniciarSesion.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
-import { login, logout, register, verifyToken, type Usuario, readStoredUser, clearAuthSession } from '../service/tareas.service'
+import { useAuth } from '../service/tareas.service'
 
+const { user, login, register, logout } = useAuth()
 const isRegistro = ref(false)
-const authUser = ref<Usuario | null>(null)
 const errorMsg = ref('')
 const isLoading = ref(false)
 
-// Datos del formulario de login
-const loginEmail = ref('')
-const loginPassword = ref('')
+const formData = ref({ email: '', password: '', nombre: '', apellido: '', confirm: '' })
 
-// Datos del formulario de registro
-const registroNombre = ref('')
-const registroApellido = ref('')
-const registroEmail = ref('')
-const registroPassword = ref('')
-const registroPasswordConfirm = ref('')
-
-const toggleForm = () => {
-  isRegistro.value = !isRegistro.value
-  errorMsg.value = ''
-}
-
-const syncUser = () => {
-  authUser.value = readStoredUser()
-}
-
-const handleLoginSubmit = async () => {
+const handleSubmit = async () => {
   errorMsg.value = ''
   isLoading.value = true
   try {
-    await login(loginEmail.value, loginPassword.value)
-    syncUser()
+    if (isRegistro.value) {
+      if (formData.value.password !== formData.value.confirm) throw new Error('Las contraseñas no coinciden')
+      await register(formData.value)
+    } else {
+      await login(formData.value.email, formData.value.password)
+    }
   } catch (err: any) {
-    errorMsg.value = err.message || 'No se pudo iniciar sesión'
+    errorMsg.value = err.message || 'Error en la operación'
   } finally {
     isLoading.value = false
   }
 }
-
-const handleRegistroSubmit = async () => {
-  errorMsg.value = ''
-  if (registroPassword.value !== registroPasswordConfirm.value) {
-    errorMsg.value = 'Las contraseñas no coinciden'
-    return
-  }
-  try {
-    await register({
-      nombre: registroNombre.value,
-      apellido: registroApellido.value,
-      email: registroEmail.value,
-      password: registroPassword.value
-    })
-    syncUser()
-    isRegistro.value = false
-  } catch (err: any) {
-    errorMsg.value = 'No se pudo registrar'
-  }
-}
-
-const cerrarSesion = async () => {
-  isLoading.value = true
-  await logout()
-  syncUser()
-  isLoading.value = false
-}
-
-onMounted(async () => {
-  // Verificar si hay token válido
-  const saved = localStorage.getItem('auth_user')
-  const token = localStorage.getItem('auth_token')
-
-  if (saved && token) {
-    isLoading.value = true
-    const verified = await verifyToken()
-    if (verified) {
-      authUser.value = verified
-      localStorage.setItem('auth_user', JSON.stringify(verified))
-    } else {
-      clearAuthSession()
-    }
-    isLoading.value = false
-  }
-})
 </script>
 
 <template>
   <div class="iniciar-sesion">
     <GlassCard max-width="500px">
       <PageTitle 
-        :title="authUser ? 'Perfil' : (isRegistro ? 'Crear Cuenta' : 'Iniciar Sesión')" 
-        :subtitle="authUser ? 'Datos de tu cuenta' : (isRegistro ? 'Regístrate para comenzar' : 'Accede a tu cuenta')" 
+        :title="user ? 'Perfil' : (isRegistro ? 'Crear Cuenta' : 'Iniciar Sesión')" 
+        :subtitle="user ? 'Datos de tu cuenta' : 'Bienvenido a TaskManager'" 
       />
 
       <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
-      <div v-if="isLoading" class="loading">Verificando sesión...</div>
-
-      <div v-else-if="authUser" class="perfil">
-        <p><strong>Nombre:</strong> {{ authUser.nombre }} {{ authUser.apellido }}</p>
-        <p><strong>Correo:</strong> {{ authUser.email }}</p>
-        <p v-if="authUser.fechaCreacion"><strong>Creado:</strong> {{ new Date(authUser.fechaCreacion).toLocaleString() }}</p>
-        <BaseButton variant="primary" full-width @click="cerrarSesion">
-          Cerrar sesión
-        </BaseButton>
+      <div v-if="user" class="perfil">
+        <p><strong>Nombre:</strong> {{ user.nombre }} {{ user.apellido }}</p>
+        <p><strong>Correo:</strong> {{ user.email }}</p>
+        <BaseButton variant="primary" full-width @click="logout">Cerrar sesión</BaseButton>
       </div>
 
-      <!-- Formulario de Login -->
-      <AuthForm 
-        v-else-if="!isRegistro" 
-        :is-registro="false"
-        @submit="handleLoginSubmit"
-        @toggle-form="toggleForm"
-      >
-        <FormInput
-          id="email"
-          v-model="loginEmail"
-          label="Correo electrónico"
-          type="email"
-          placeholder="tu@email.com"
-        />
+      <AuthForm v-else :is-registro="isRegistro" @submit="handleSubmit" @toggle-form="isRegistro = !isRegistro; errorMsg = ''">
+        <template v-if="isRegistro">
+          <FormInput id="nombre" v-model="formData.nombre" label="Nombre" />
+          <FormInput id="apellido" v-model="formData.apellido" label="Apellido" />
+        </template>
+        
+        <FormInput id="email" v-model="formData.email" label="Correo" type="email" />
+        <FormInput id="pass" v-model="formData.password" label="Contraseña" type="password" />
+        
+        <FormInput v-if="isRegistro" id="conf" v-model="formData.confirm" label="Confirmar" type="password" />
 
-        <FormInput
-          id="password"
-          v-model="loginPassword"
-          label="Contraseña"
-          type="password"
-          placeholder="••••••••"
-        />
-
-        <BaseButton type="submit" variant="primary" full-width>
-          Iniciar Sesión
-        </BaseButton>
-      </AuthForm>
-
-      <!-- Formulario de Registro -->
-      <AuthForm 
-        v-else
-        :is-registro="true"
-        @submit="handleRegistroSubmit"
-        @toggle-form="toggleForm"
-      >
-        <FormInput
-          id="nombre"
-          v-model="registroNombre"
-          label="Nombre"
-          placeholder="Juan"
-        />
-
-        <FormInput
-          id="apellido"
-          v-model="registroApellido"
-          label="Apellido"
-          placeholder="Pérez"
-        />
-
-        <FormInput
-          id="email-registro"
-          v-model="registroEmail"
-          label="Correo electrónico"
-          type="email"
-          placeholder="tu@email.com"
-        />
-
-        <FormInput
-          id="password-registro"
-          v-model="registroPassword"
-          label="Crear contraseña"
-          type="password"
-          placeholder="••••••••"
-        />
-
-        <FormInput
-          id="password-confirm"
-          v-model="registroPasswordConfirm"
-          label="Confirmar contraseña"
-          type="password"
-          placeholder="••••••••"
-        />
-
-        <BaseButton type="submit" variant="primary" full-width>
-          Crear Usuario
+        <BaseButton type="submit" variant="primary" full-width :disabled="isLoading">
+          {{ isLoading ? 'Procesando...' : (isRegistro ? 'Crear Usuario' : 'Iniciar Sesión') }}
         </BaseButton>
       </AuthForm>
     </GlassCard>
@@ -195,40 +69,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.iniciar-sesion {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 40px;
-  padding-bottom: 40px; /* Add bottom padding for footer spacing */
-  min-height: auto; /* Remove fixed min-height */
-}
-
-.error {
-  color: #ef4444;
-  text-align: center;
-  margin-bottom: 4px;
-  font-weight: 500;
-}
-
-.perfil {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  color: #1e293b;
-}
-
-.loading {
-  text-align: center;
-  color: #2563eb;
-  padding: 20px;
-  font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .iniciar-sesion {
-    padding-top: 20px;
-    padding-bottom: 30px;
-  }
-}
+.iniciar-sesion { display: flex; justify-content: center; padding: 40px 0; }
+.error { color: #ef4444; text-align: center; margin-bottom: 10px; }
+.perfil { display: flex; flex-direction: column; gap: 10px; color: #1e293b; }
 </style>

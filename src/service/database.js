@@ -1,9 +1,18 @@
 import sql from 'mssql/msnodesqlv8.js';
 import { DB_CONFIG } from './constants.js';
 
+// Patrón Singleton: Asegura una única instancia del pool de conexión
+let poolInstance = null;
+
 export async function getPool() {
-  if (!global.connectionPool) {
-    global.connectionPool = await sql.connect(DB_CONFIG);
+  if (!poolInstance) {
+    try {
+      poolInstance = await sql.connect(DB_CONFIG);
+    } catch (err) {
+      console.error('Error conectando a BD:', err);
+      poolInstance = null;
+      throw err;
+    }
   }
-  return global.connectionPool;
+  return poolInstance;
 }
