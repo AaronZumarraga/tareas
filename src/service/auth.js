@@ -1,26 +1,21 @@
 import crypto from 'crypto';
-
-const HASH_ITER = 100_000;
-const HASH_LEN = 64;
-const HASH_ALGO = 'sha512';
-const TOKEN_SECRET = 'tu_clave_secreta_super_segura_cambiar_en_produccion';
-const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas
+import { HASH_CONFIG, TOKEN_CONFIG } from './constants.js';
 
 const activeTokens = new Map();
 
 export const hashPassword = (password, salt = crypto.randomBytes(16).toString('hex')) => {
-  const hash = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, HASH_CONFIG.ITER, HASH_CONFIG.LEN, HASH_CONFIG.ALGO).toString('hex');
   return `${salt}:${hash}`;
 };
 
 export const verifyPassword = (password, stored) => {
   const [salt, hash] = stored.split(':');
-  const test = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
+  const test = crypto.pbkdf2Sync(password, salt, HASH_CONFIG.ITER, HASH_CONFIG.LEN, HASH_CONFIG.ALGO).toString('hex');
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(test, 'hex'));
 };
 
 export const generateToken = (userId) => {
-  const payload = { userId, iat: Date.now(), exp: Date.now() + TOKEN_EXPIRY };
+  const payload = { userId, iat: Date.now(), exp: Date.now() + TOKEN_CONFIG.EXPIRY };
   const token = Buffer.from(JSON.stringify(payload)).toString('base64');
   activeTokens.set(token, payload);
   return token;

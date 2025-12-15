@@ -1,5 +1,17 @@
 import { getPool } from './database.js';
 import { hashPassword } from './auth.js';
+import { DEFAULT_USER, CATALOG_DEFAULTS } from './constants.js';
+
+const TASK_FIELDS = `
+  t.id, t.titulo, t.descripcion, t.usuarioId, 
+  e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
+  t.completed, t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
+`;
+
+const TASK_JOINS = `
+  LEFT JOIN Estados e ON t.estadoId = e.id
+  LEFT JOIN Prioridades p ON t.prioridadId = p.id
+`;
 
 async function getCatalogId(pool, table, name, defaultId = null) {
   if (!name) return defaultId;
@@ -35,16 +47,18 @@ export const UserRepository = {
     return result.recordset[0];
   },
 
-  // Mantiene la lógica original de obtener el primer usuario o crear uno por defecto
   async getFallbackUser() {
     const pool = await getPool();
     const result = await pool.request().query('SELECT TOP 1 id FROM Usuarios');
     
     if (result.recordset.length > 0) return result.recordset[0].id;
 
-    const hashedDefault = hashPassword('password123');
+    const hashedDefault = hashPassword(DEFAULT_USER.password);
     const newUser = await this.create({
-      nombre: 'Usuario', apellido: 'Ejemplo', email: 'usuario@ejemplo.com', password: hashedDefault
+      nombre: DEFAULT_USER.nombre,
+      apellido: DEFAULT_USER.apellido,
+      email: DEFAULT_USER.email,
+      password: hashedDefault
     });
     return newUser.id;
   }
@@ -54,12 +68,9 @@ export const TaskRepository = {
   async findAll() {
     const pool = await getPool();
     const result = await pool.request().query(`
-      SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
-             e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
-             t.completed, t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
+      SELECT ${TASK_FIELDS}
       FROM Tareas t
-      LEFT JOIN Estados e ON t.estadoId = e.id
-      LEFT JOIN Prioridades p ON t.prioridadId = p.id
+      ${TASK_JOINS}
       ORDER BY t.fechaCreacion DESC
     `);
     return result.recordset;
@@ -68,12 +79,9 @@ export const TaskRepository = {
   async findById(id) {
     const pool = await getPool();
     const result = await pool.request().input('id', id).query(`
-      SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
-             e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
-             t.completed, t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
+      SELECT ${TASK_FIELDS}
       FROM Tareas t
-      LEFT JOIN Estados e ON t.estadoId = e.id
-      LEFT JOIN Prioridades p ON t.prioridadId = p.id
+      ${TASK_JOINS}
       WHERE t.id = @id
     `);
     return result.recordset[0];
@@ -85,8 +93,7 @@ export const TaskRepository = {
     const estadoId = await getCatalogId(pool, 'Estados', estado);
     if (!estadoId) throw new Error('Estado no válido');
 
-    const prioridadId = await getCatalogId(pool, 'Prioridades', prioridad, 2); // 2 = Media por defecto
-    
+    const prioridadId = await getCatalogId(pool, 'Prioridades', prioridad, CATALOG_DEFAULTS.prioridad);
     const completed = estado === 'Completada' ? 1 : 0;
     const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
 
@@ -113,8 +120,7 @@ export const TaskRepository = {
     const estadoId = await getCatalogId(pool, 'Estados', estado);
     if (!estadoId) throw new Error('Estado no válido');
 
-    const prioridadId = await getCatalogId(pool, 'Prioridades', prioridad, 2);
-    
+    const prioridadId = await getCatalogId(pool, 'Prioridades', prioridad, CATALOG_DEFAULTS.prioridad);
     const completed = estado === 'Completada' ? 1 : 0;
     const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
 
