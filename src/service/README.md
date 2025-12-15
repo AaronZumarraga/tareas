@@ -85,7 +85,8 @@ Todos los comandos deben ejecutarse desde la **raíz del proyecto** (`c:\Users\A
 
 ## Endpoints disponibles
 
-- `GET http://localhost:3000/api` - Información de la API
-- `GET http://localhost:3000/api/health` - Estado del servidor
+- `GET http://localhost:3000/` - Estado simple del servidor (respuesta: `{ "status": "running" }`)
+- `GET http://localhost:3000/api` - Información de la API (nombre, versión, uptime)
+- `GET http://localhost:3000/api/health` - Estado del servidor y base de datos
 - `GET http://localhost:3000/api/tareas` - Obtener todas las tareas
 - `POST http://localhost:3000/api/tareas` - Crear nueva tarea

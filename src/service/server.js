@@ -13,6 +13,39 @@ app.get('/', (req, res) => {
   res.json({ status: 'running' });
 });
 
+// NUEVO: Información de la API
+app.get('/api', (req, res) => {
+  res.json({
+    name: 'Tareas API',
+    version: '1.0',
+    status: 'ok',
+    uptime: Math.round(process.uptime()),
+    now: new Date().toISOString()
+  });
+});
+
+// NUEVO: Healthcheck con verificación de BD
+app.get('/api/health', async (req, res) => {
+  const started = Date.now();
+  try {
+    const pool = await getPool();
+    const result = await pool.request().query('SELECT 1 AS ok');
+    const dbOk = result?.recordset?.[0]?.ok === 1;
+    return res.json({
+      status: 'ok',
+      db: dbOk ? 'ok' : 'down',
+      latencyMs: Date.now() - started
+    });
+  } catch (error) {
+    return res.status(503).json({
+      status: 'down',
+      db: 'down',
+      error: error.message,
+      latencyMs: Date.now() - started
+    });
+  }
+});
+
 const HASH_ITER = 100_000;
 const HASH_LEN = 64;
 const HASH_ALGO = 'sha512';
