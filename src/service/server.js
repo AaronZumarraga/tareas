@@ -1,7 +1,11 @@
 import express from 'express';
 import cors from 'cors';
-import crypto from 'crypto';
 import { getPool } from './database.js';
+import { 
+  hashPassword, verifyPassword, generateToken, 
+  validateTokenMiddleware, invalidateToken 
+} from './auth.js';
+import { UserRepository, TaskRepository } from './repository.js';
 
 const app = express();
 const PORT = 3000;
@@ -41,86 +45,12 @@ app.get('/api/health', async (req, res) => {
     const result = await pool.request().query('SELECT 1 AS ok');
     const dbOk = result?.recordset?.[0]?.ok === 1;
     console.log(`GET /api/health - BD: ${dbOk ? 'OK' : 'DOWN'} (${Date.now() - started}ms)`);
-    return res.json({
-      status: 'ok',
-      db: dbOk ? 'ok' : 'down',
-      latencyMs: Date.now() - started
-    });
+    return res.json({ status: 'ok', db: dbOk ? 'ok' : 'down', latencyMs: Date.now() - started });
   } catch (error) {
     console.error(`GET /api/health - Error en BD: ${error.message}`);
-    return res.status(503).json({
-      status: 'down',
-      db: 'down',
-      error: error.message,
-      latencyMs: Date.now() - started
-    });
+    return res.status(503).json({ status: 'down', db: 'down', error: error.message, latencyMs: Date.now() - started });
   }
 });
-
-const HASH_ITER = 100_000;
-const HASH_LEN = 64;
-const HASH_ALGO = 'sha512';
-const TOKEN_SECRET = 'tu_clave_secreta_super_segura_cambiar_en_produccion';
-const TOKEN_EXPIRY = 24 * 60 * 60 * 1000; // 24 horas en ms
-
-// Almacenar tokens activos en memoria (en producción usar Redis o BD)
-const activeTokens = new Map();
-
-const hashPassword = (password, salt = crypto.randomBytes(16).toString('hex')) => {
-  const hash = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
-  return `${salt}:${hash}`;
-};
-
-const verifyPassword = (password, stored) => {
-  const [salt, hash] = stored.split(':');
-  const test = crypto.pbkdf2Sync(password, salt, HASH_ITER, HASH_LEN, HASH_ALGO).toString('hex');
-  return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(test, 'hex'));
-};
-
-// Generar token JWT simple
-const generateToken = (userId) => {
-  const payload = {
-    userId,
-    iat: Date.now(),
-    exp: Date.now() + TOKEN_EXPIRY
-  };
-  const token = Buffer.from(JSON.stringify(payload)).toString('base64');
-  activeTokens.set(token, payload);
-  console.log(`Token generado para usuario ID: ${userId}`);
-  return token;
-};
-
-// Validar token
-const verifyToken = (token) => {
-  const payload = activeTokens.get(token);
-  if (!payload) {
-    console.log('Token no encontrado');
-    return null;
-  }
-  if (payload.exp < Date.now()) {
-    activeTokens.delete(token);
-    console.log(`Token expirado para usuario ID: ${payload.userId}`);
-    return null;
-  }
-  return payload;
-};
-
-// Middleware para validar token
-const validateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    console.log(`Intento de acceso sin token en: ${req.path}`);
-    return res.status(401).json({ message: 'Token requerido' });
-  }
-  const payload = verifyToken(token);
-  if (!payload) {
-    console.log(`Token inválido/expirado en: ${req.path}`);
-    return res.status(401).json({ message: 'Token inválido o expirado' });
-  }
-  req.userId = payload.userId;
-  console.log(`Token válido para usuario ID: ${payload.userId} en: ${req.path}`);
-  next();
-};
 
 // Auth: registro
 app.post('/api/auth/register', async (req, res) => {
@@ -129,31 +59,19 @@ app.post('/api/auth/register', async (req, res) => {
   
   try {
     if (!nombre || !apellido || !email || !password) {
-      console.log(`Campos incompletos en registro: ${email}`);
       return res.status(400).send('Completa todos los campos');
     }
 
-    const pool = await getPool();
-    const exists = await pool.request().input('email', email).query('SELECT id FROM Usuarios WHERE email = @email');
-    if (exists.recordset.length) {
-      console.log(`Email ya registrado: ${email}`);
+    const exists = await UserRepository.findByEmail(email);
+    if (exists) {
       return res.status(409).send('El correo ya está registrado');
     }
 
     const hashed = hashPassword(password);
-    const inserted = await pool.request()
-      .input('nombre', nombre)
-      .input('apellido', apellido)
-      .input('email', email)
-      .input('password', hashed)
-      .query(`
-        INSERT INTO Usuarios (nombre, apellido, email, password)
-        OUTPUT INSERTED.id, INSERTED.nombre, INSERTED.apellido, INSERTED.email, INSERTED.fechaCreacion
-        VALUES (@nombre, @apellido, @email, @password)
-      `);
+    const newUser = await UserRepository.create({ nombre, apellido, email, password: hashed });
 
-    console.log(`Usuario registrado exitosamente - ID: ${inserted.recordset[0].id}, Email: ${email}`);
-    res.status(201).json(inserted.recordset[0]);
+    console.log(`Usuario registrado exitosamente - ID: ${newUser.id}, Email: ${email}`);
+    res.status(201).json(newUser);
   } catch (error) {
     console.error(`Error al registrar usuario ${email}:`, error.message);
     res.status(500).send('No se pudo registrar, intenta nuevamente');
@@ -166,34 +84,19 @@ app.post('/api/auth/login', async (req, res) => {
   console.log(`POST /api/auth/login - Intento de login: ${email}`);
   
   try {
-    if (!email || !password) {
-      console.log('Credenciales incompletas');
-      return res.status(400).send('Correo y contraseña son requeridos');
-    }
+    if (!email || !password) return res.status(400).send('Correo y contraseña son requeridos');
 
-    const pool = await getPool();
-    const userResult = await pool.request().input('email', email).query('SELECT * FROM Usuarios WHERE email = @email');
-    if (!userResult.recordset.length) {
-      console.log(`Usuario no encontrado: ${email}`);
-      return res.status(404).send('Usuario no encontrado');
-    }
+    const user = await UserRepository.findByEmail(email);
+    if (!user) return res.status(404).send('Usuario no encontrado');
 
-    const user = userResult.recordset[0];
     const isValid = verifyPassword(password, user.password);
-    if (!isValid) {
-      console.log(`Contraseña inválida para: ${email}`);
-      return res.status(401).send('Credenciales inválidas');
-    }
+    if (!isValid) return res.status(401).send('Credenciales inválidas');
 
-    // Generar token
     const token = generateToken(user.id);
-
     const { password: _, ...safeUser } = user;
+    
     console.log(`Login exitoso - Usuario ID: ${user.id}, Email: ${email}`);
-    res.json({
-      ...safeUser,
-      token
-    });
+    res.json({ ...safeUser, token });
   } catch (error) {
     console.error(`Error al iniciar sesión para ${email}:`, error.message);
     res.status(500).send('No se pudo iniciar sesión, intenta nuevamente');
@@ -201,30 +104,22 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // Auth: logout
-app.post('/api/auth/logout', validateToken, (req, res) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token) {
-    activeTokens.delete(token);
+app.post('/api/auth/logout', validateTokenMiddleware, (req, res) => {
+  if (req.token) {
+    invalidateToken(req.token);
     console.log(`Logout - Token invalidado para usuario ID: ${req.userId}`);
   }
   res.json({ message: 'Sesión cerrada' });
 });
 
 // Auth: verificar token
-app.get('/api/auth/verify', validateToken, async (req, res) => {
+app.get('/api/auth/verify', validateTokenMiddleware, async (req, res) => {
   try {
-    const pool = await getPool();
-    const userResult = await pool.request()
-      .input('id', req.userId)
-      .query('SELECT id, nombre, apellido, email, fechaCreacion FROM Usuarios WHERE id = @id');
-    
-    if (!userResult.recordset.length) {
-      console.log(`Usuario no encontrado en verificación - ID: ${req.userId}`);
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
+    const user = await UserRepository.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
 
     console.log(`Token verificado - Usuario ID: ${req.userId}`);
-    res.json(userResult.recordset[0]);
+    res.json(user);
   } catch (error) {
     console.error(`Error al verificar token para usuario ${req.userId}:`, error.message);
     res.status(500).json({ message: 'Error al verificar token' });
@@ -232,22 +127,12 @@ app.get('/api/auth/verify', validateToken, async (req, res) => {
 });
 
 // GET tareas
-app.get('/api/tareas', validateToken, async (req, res) => {
+app.get('/api/tareas', validateTokenMiddleware, async (req, res) => {
   try {
     console.log(`GET /api/tareas - Usuario ID: ${req.userId}`);
-    const pool = await getPool();
-    const result = await pool.request().query(`
-      SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
-             e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
-             t.completed,
-             t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
-      FROM Tareas t
-      LEFT JOIN Estados e ON t.estadoId = e.id
-      LEFT JOIN Prioridades p ON t.prioridadId = p.id
-      ORDER BY t.fechaCreacion DESC
-    `);
-    console.log(`${result.recordset.length} tareas obtenidas`);
-    res.json(result.recordset);
+    const tareas = await TaskRepository.findAll();
+    console.log(`${tareas.length} tareas obtenidas`);
+    res.json(tareas);
   } catch (error) {
     console.error('Error al obtener tareas:', error.message);
     res.status(500).json({ message: 'Error al obtener tareas', error: error.message });
@@ -255,106 +140,22 @@ app.get('/api/tareas', validateToken, async (req, res) => {
 });
 
 // POST crear tarea
-app.post('/api/tareas', validateToken, async (req, res) => {
+app.post('/api/tareas', validateTokenMiddleware, async (req, res) => {
   const { titulo, descripcion, estado, fechaVencimiento, prioridad } = req.body;
   console.log(`POST /api/tareas - Nueva tarea: "${titulo}" (Usuario ID: ${req.userId})`);
   
   try {
-    if (!titulo || !estado) {
-      console.log('Campos requeridos faltantes en nueva tarea');
-      return res.status(400).json({ message: 'Título y estado son requeridos' });
-    }
+    if (!titulo || !estado) return res.status(400).json({ message: 'Título y estado son requeridos' });
 
-    const pool = await getPool();
+    // Mantiene lógica original: usa un usuario fallback en lugar del usuario del token
+    const usuarioId = await UserRepository.getFallbackUser();
 
-    // Obtener estadoId
-    const estadoResult = await pool.request()
-      .input('nombre', estado)
-      .query('SELECT id FROM Estados WHERE nombre = @nombre');
-    
-    if (estadoResult.recordset.length === 0) {
-      console.log(`Estado no válido: ${estado}`);
-      return res.status(400).json({ message: 'Estado no válido' });
-    }
-    const estadoId = estadoResult.recordset[0].id;
-
-    // Obtener prioridadId
-    let prioridadId = 2;
-    if (prioridad) {
-      const prioridadResult = await pool.request()
-        .input('nombre', prioridad)
-        .query('SELECT id FROM Prioridades WHERE nombre = @nombre');
-      
-      if (prioridadResult.recordset.length > 0) {
-        prioridadId = prioridadResult.recordset[0].id;
-      }
-    }
-
-    // Obtener usuario
-    let usuarioResult = await pool.request().query('SELECT TOP 1 id FROM Usuarios');
-    let usuarioId;
-    
-    if (usuarioResult.recordset.length === 0) {
-      const hashedDefault = hashPassword('password123');
-      const newUser = await pool.request()
-        .input('nombre', 'Usuario')
-        .input('apellido', 'Ejemplo')
-        .input('email', 'usuario@ejemplo.com')
-        .input('password', hashedDefault)
-        .query(`
-          INSERT INTO Usuarios (nombre, apellido, email, password)
-          OUTPUT INSERTED.id
-          VALUES (@nombre, @apellido, @email, @password)
-        `);
-      usuarioId = newUser.recordset[0].id;
-    } else {
-      usuarioId = usuarioResult.recordset[0].id;
-    }
-
-    // Determinar completed basado en estado
-    const completed = (estado === 'Completada') ? 1 : 0;
-    const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
-
-    const result = await pool.request()
-      .input('titulo', titulo)
-      .input('descripcion', descripcion || '')
-      .input('usuarioId', usuarioId)
-      .input('estadoId', estadoId)
-      .input('prioridadId', prioridadId)
-      .input('completed', completed)
-      .input('fechaVencimiento', fechaVencimiento || null)
-      .query(`
-        INSERT INTO Tareas (titulo, descripcion, usuarioId, estadoId, prioridadId, completed, fechaVencimiento, fechaCompletacion)
-        OUTPUT INSERTED.id, INSERTED.titulo, INSERTED.descripcion, INSERTED.usuarioId, 
-               INSERTED.estadoId, INSERTED.prioridadId, INSERTED.completed,
-               INSERTED.fechaVencimiento, INSERTED.fechaCreacion, INSERTED.fechaCompletacion
-        VALUES (@titulo, @descripcion, @usuarioId, @estadoId, @prioridadId, @completed, @fechaVencimiento, ${fechaCompletacion})
-      `);
-
-    const tarea = result.recordset[0];
-    
-    // Obtener nombres de estado y prioridad
-    const estadoNombre = await pool.request()
-      .input('id', tarea.estadoId)
-      .query('SELECT nombre FROM Estados WHERE id = @id');
-
-    const prioridadNombre = await pool.request()
-      .input('id', tarea.prioridadId)
-      .query('SELECT nombre FROM Prioridades WHERE id = @id');
+    const tarea = await TaskRepository.create({
+      titulo, descripcion, usuarioId, estado, prioridad, fechaVencimiento
+    });
 
     console.log(`Tarea creada exitosamente - ID: ${tarea.id}, Título: "${titulo}"`);
-    res.status(201).json({
-      id: tarea.id,
-      titulo: tarea.titulo,
-      descripcion: tarea.descripcion,
-      estado: estadoNombre.recordset[0].nombre,
-      prioridad: prioridadNombre.recordset[0].nombre,
-      prioridadId: tarea.prioridadId,
-      completed: tarea.completed,
-      fechaVencimiento: tarea.fechaVencimiento,
-      fechaCreacion: tarea.fechaCreacion,
-      fechaCompletacion: tarea.fechaCompletacion
-    });
+    res.status(201).json(tarea);
   } catch (error) {
     console.error(`Error al crear tarea "${titulo}":`, error.message);
     res.status(500).json({ message: 'Error al crear tarea', error: error.message });
@@ -362,88 +163,25 @@ app.post('/api/tareas', validateToken, async (req, res) => {
 });
 
 // PUT actualizar tarea
-app.put('/api/tareas/:id', validateToken, async (req, res) => {
+app.put('/api/tareas/:id', validateTokenMiddleware, async (req, res) => {
   const { id } = req.params;
   const { titulo, descripcion, estado, prioridad, fechaVencimiento } = req.body;
   console.log(`PUT /api/tareas/${id} - Actualizar: "${titulo}" (Usuario ID: ${req.userId})`);
   
   try {
-    if (!titulo || !estado) {
-      console.log('Campos requeridos faltantes en actualización');
-      return res.status(400).json({ message: 'Título y estado son requeridos' });
-    }
+    if (!titulo || !estado) return res.status(400).json({ message: 'Título y estado son requeridos' });
 
-    const pool = await getPool();
+    const updatedTask = await TaskRepository.update(id, {
+      titulo, descripcion, estado, prioridad, fechaVencimiento
+    });
 
-    // Obtener estadoId
-    const estadoResult = await pool.request()
-      .input('nombre', estado)
-      .query('SELECT id FROM Estados WHERE nombre = @nombre');
-    
-    if (estadoResult.recordset.length === 0) {
-      console.log(`Estado no válido: ${estado}`);
-      return res.status(400).json({ message: 'Estado no válido' });
-    }
-    const estadoId = estadoResult.recordset[0].id;
-
-    // Obtener prioridadId
-    let prioridadId = 2;
-    if (prioridad) {
-      const prioridadResult = await pool.request()
-        .input('nombre', prioridad)
-        .query('SELECT id FROM Prioridades WHERE nombre = @nombre');
-      
-      if (prioridadResult.recordset.length > 0) {
-        prioridadId = prioridadResult.recordset[0].id;
-      }
-    }
-
-    // Determinar completed y fechaCompletacion basado en estado
-    const completed = (estado === 'Completada') ? 1 : 0;
-    const fechaCompletacion = completed ? 'GETDATE()' : 'NULL';
-
-    const result = await pool.request()
-      .input('id', id)
-      .input('titulo', titulo)
-      .input('descripcion', descripcion || '')
-      .input('estadoId', estadoId)
-      .input('prioridadId', prioridadId)
-      .input('completed', completed)
-      .input('fechaVencimiento', fechaVencimiento || null)
-      .query(`
-        UPDATE Tareas
-        SET titulo = @titulo, 
-            descripcion = @descripcion, 
-            estadoId = @estadoId,
-            prioridadId = @prioridadId,
-            completed = @completed,
-            fechaVencimiento = @fechaVencimiento, 
-            fechaModificacion = GETDATE(),
-            fechaCompletacion = ${fechaCompletacion}
-        WHERE id = @id
-      `);
-
-    if (result.rowsAffected[0] === 0) {
+    if (!updatedTask) {
       console.log(`Tarea no encontrada - ID: ${id}`);
       return res.status(404).json({ message: 'Tarea no encontrada' });
     }
 
-    // Obtener tarea actualizada completa
-    const updatedTask = await pool.request()
-      .input('id', id)
-      .query(`
-        SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
-               e.nombre as estado, p.nombre as prioridad, p.id as prioridadId,
-               t.completed,
-               t.fechaCreacion, t.fechaVencimiento, t.fechaCompletacion, t.fechaModificacion
-        FROM Tareas t
-        LEFT JOIN Estados e ON t.estadoId = e.id
-        LEFT JOIN Prioridades p ON t.prioridadId = p.id
-        WHERE t.id = @id
-      `);
-
     console.log(`Tarea actualizada exitosamente - ID: ${id}`);
-    res.status(200).json(updatedTask.recordset[0]);
+    res.status(200).json(updatedTask);
   } catch (error) {
     console.error(`Error al actualizar tarea ${id}:`, error.message);
     res.status(500).json({ message: 'Error al actualizar tarea', error: error.message });
@@ -451,17 +189,14 @@ app.put('/api/tareas/:id', validateToken, async (req, res) => {
 });
 
 // DELETE eliminar tarea
-app.delete('/api/tareas/:id', validateToken, async (req, res) => {
+app.delete('/api/tareas/:id', validateTokenMiddleware, async (req, res) => {
   const { id } = req.params;
   console.log(`DELETE /api/tareas/${id} - Eliminar tarea (Usuario ID: ${req.userId})`);
   
   try {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('id', id)
-      .query('DELETE FROM Tareas WHERE id = @id');
+    const deleted = await TaskRepository.delete(id);
     
-    if (result.rowsAffected[0] === 0) {
+    if (!deleted) {
       console.log(`Tarea no encontrada para eliminar - ID: ${id}`);
       return res.status(404).json({ message: 'Tarea no encontrada' });
     }
