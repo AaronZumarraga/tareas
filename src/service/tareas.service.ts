@@ -1,4 +1,24 @@
 const API_BASE = 'http://localhost:3000/api';
+const AUTH_USER_KEY = 'auth_user';
+const AUTH_TOKEN_KEY = 'auth_token';
+export const AUTH_CHANGE_EVENT = 'auth-change';
+
+export function readStoredUser(): Usuario | null {
+  const saved = localStorage.getItem(AUTH_USER_KEY);
+  return saved ? JSON.parse(saved) : null;
+}
+
+export function writeAuthSession(user: Usuario, token: string) {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+}
+
+export function clearAuthSession() {
+  localStorage.removeItem(AUTH_TOKEN_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+  window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
+}
 
 export interface Usuario {
   id: number;
@@ -24,7 +44,7 @@ export interface Tarea {
 
 // Helper privado para peticiones
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -51,9 +71,8 @@ export async function login(email: string, password: string): Promise<Usuario> {
     method: 'POST',
     body: JSON.stringify({ email, password })
   });
-  
-  localStorage.setItem('auth_token', data.token);
   const { token, ...user } = data;
+  writeAuthSession(user, token);
   return user;
 }
 
@@ -63,18 +82,16 @@ export async function logout(): Promise<void> {
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
   } finally {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    clearAuthSession();
   }
 }
 
 export async function verifyToken(): Promise<Usuario | null> {
-  if (!localStorage.getItem('auth_token')) return null;
+  if (!localStorage.getItem(AUTH_TOKEN_KEY)) return null;
   try {
     return await request<Usuario>('/auth/verify');
   } catch (error) {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    clearAuthSession();
     return null;
   }
 }
@@ -119,8 +136,11 @@ export async function register(data: {
   email: string;
   password: string;
 }): Promise<Usuario> {
-  return request<Usuario>('/auth/register', {
+  const result = await request<any>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(data)
   });
+  const { token, ...user } = result;
+  if (token) writeAuthSession(user, token);
+  return user;
 }

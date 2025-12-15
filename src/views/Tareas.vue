@@ -1,20 +1,20 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\Tareas.vue -->
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import GlassCard from '../components/GlassCard.vue'
 import PageTitle from '../components/PageTitle.vue'
 import TaskInput from '../components/TaskInput.vue'
 import TaskItem from '../components/TaskItem.vue'
 import TasksStats from '../components/TasksStats.vue'
 import TasksFilters from '../components/TasksFilters.vue'
-import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea } from '../service/tareas.service.ts'
-import { ref as authRef } from 'vue'; // Importa ref para manejar la autenticación
+import { fetchTareas, crearTarea, eliminarTarea, updateTarea, type Tarea, readStoredUser, AUTH_CHANGE_EVENT } from '../service/tareas.service'
 
 const tasks = ref<Tarea[]>([])
 const filter = ref<'all' | 'active' | 'completed'>('all')
-const authUser = authRef<any>(null) // Referencia para el usuario autenticado
+const authUser = ref<any>(null) // Referencia para el usuario autenticado
 
 const loadTasks = async () => {
+  if (!authUser.value) return
   try {
     const fetched = await fetchTareas()
     tasks.value = fetched
@@ -23,10 +23,22 @@ const loadTasks = async () => {
   }
 }
 
-onMounted(() => {
+const syncAuth = () => {
+  authUser.value = readStoredUser()
+  if (!authUser.value) {
+    tasks.value = []
+    return
+  }
   loadTasks()
-  const saved = localStorage.getItem('auth_user')
-  authUser.value = saved ? JSON.parse(saved) : null
+}
+
+onMounted(() => {
+  syncAuth()
+  window.addEventListener(AUTH_CHANGE_EVENT, syncAuth)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(AUTH_CHANGE_EVENT, syncAuth)
 })
 
 const handleAddTask = async (taskData: { titulo: string; descripcion: string; estado: string; prioridad: string; fechaVencimiento: string }) => {

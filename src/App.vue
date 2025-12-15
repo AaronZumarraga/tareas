@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+import { readStoredUser, AUTH_CHANGE_EVENT } from './service/tareas.service'
 
 const isMenuOpen = ref(false)
 const authUser = ref<any>(null)
@@ -10,8 +11,7 @@ const toggleMenu = () => {
 }
 
 const loadAuth = () => {
-  const saved = localStorage.getItem('auth_user')
-  authUser.value = saved ? JSON.parse(saved) : null
+  authUser.value = readStoredUser()
 }
 
 const handleStorage = (e: StorageEvent) => {
@@ -22,13 +22,15 @@ const handleAuthChange = () => loadAuth()
 onMounted(() => {
   loadAuth()
   window.addEventListener('storage', handleStorage)
-  window.addEventListener('auth-change', handleAuthChange)
+  window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('storage', handleStorage)
-  window.removeEventListener('auth-change', handleAuthChange)
+  window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange)
 })
+
+const currentYear = computed(() => new Date().getFullYear())
 </script>
 
 <template>
@@ -57,7 +59,7 @@ onBeforeUnmount(() => {
     </main>
     <footer>
       <div class="container">
-        <p>&copy; {{ new Date().getFullYear() }} TaskManager. Todos los derechos reservados.</p>
+        <p>&copy; {{ currentYear }} TaskManager. Todos los derechos reservados.</p>
       </div>
     </footer>
   </div>

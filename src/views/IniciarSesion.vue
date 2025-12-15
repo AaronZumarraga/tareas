@@ -6,7 +6,7 @@ import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
 import BaseButton from '../components/BaseButton.vue'
-import { login, logout, register, verifyToken, type Usuario } from '../service/tareas.service'
+import { login, logout, register, verifyToken, type Usuario, readStoredUser, clearAuthSession } from '../service/tareas.service'
 
 const isRegistro = ref(false)
 const authUser = ref<Usuario | null>(null)
@@ -29,23 +29,16 @@ const toggleForm = () => {
   errorMsg.value = ''
 }
 
-const persistUser = (user: Usuario | null) => {
-  if (user) {
-    localStorage.setItem('auth_user', JSON.stringify(user))
-  } else {
-    localStorage.removeItem('auth_user')
-    localStorage.removeItem('auth_token')
-  }
-  authUser.value = user
-  window.dispatchEvent(new Event('auth-change'))
+const syncUser = () => {
+  authUser.value = readStoredUser()
 }
 
 const handleLoginSubmit = async () => {
   errorMsg.value = ''
   isLoading.value = true
   try {
-    const user = await login(loginEmail.value, loginPassword.value)
-    persistUser(user)
+    await login(loginEmail.value, loginPassword.value)
+    syncUser()
   } catch (err: any) {
     errorMsg.value = err.message || 'No se pudo iniciar sesión'
   } finally {
@@ -60,13 +53,13 @@ const handleRegistroSubmit = async () => {
     return
   }
   try {
-    const user = await register({
+    await register({
       nombre: registroNombre.value,
       apellido: registroApellido.value,
       email: registroEmail.value,
       password: registroPassword.value
     })
-    persistUser(user)
+    syncUser()
     isRegistro.value = false
   } catch (err: any) {
     errorMsg.value = 'No se pudo registrar'
@@ -76,7 +69,7 @@ const handleRegistroSubmit = async () => {
 const cerrarSesion = async () => {
   isLoading.value = true
   await logout()
-  persistUser(null)
+  syncUser()
   isLoading.value = false
 }
 
@@ -92,8 +85,7 @@ onMounted(async () => {
       authUser.value = verified
       localStorage.setItem('auth_user', JSON.stringify(verified))
     } else {
-      // Token expirado
-      persistUser(null)
+      clearAuthSession()
     }
     isLoading.value = false
   }

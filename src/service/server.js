@@ -69,9 +69,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     const hashed = hashPassword(password);
     const newUser = await UserRepository.create({ nombre, apellido, email, password: hashed });
-
+    const token = generateToken(newUser.id);
     console.log(`Usuario registrado exitosamente - ID: ${newUser.id}, Email: ${email}`);
-    res.status(201).json(newUser);
+    res.status(201).json({ ...newUser, token });
   } catch (error) {
     console.error(`Error al registrar usuario ${email}:`, error.message);
     res.status(500).send('No se pudo registrar, intenta nuevamente');
