@@ -8,6 +8,9 @@ const isMenuOpen = ref(false)
 const currentYear = computed(() => new Date().getFullYear())
 
 onMounted(() => verifySession())
+
+const toggleMenu = () => { isMenuOpen.value = !isMenuOpen.value }
+const closeMenu = () => { isMenuOpen.value = false }
 </script>
 
 <template>
@@ -15,14 +18,21 @@ onMounted(() => verifySession())
     <header>
       <div class="container">
         <h1 class="logo">TaskManager</h1>
-        <button class="hamburger" @click="isMenuOpen = !isMenuOpen">
-          <span :class="{'open': isMenuOpen}">☰</span>
+        <button
+          class="hamburger"
+          :aria-expanded="isMenuOpen"
+          aria-controls="main-nav"
+          @click="toggleMenu"
+        >
+          <span class="bar" :class="{ open: isMenuOpen }"></span>
+          <span class="bar" :class="{ open: isMenuOpen }"></span>
+          <span class="bar" :class="{ open: isMenuOpen }"></span>
         </button>
-        <nav :class="{ 'open': isMenuOpen }">
-          <RouterLink to="/" class="nav-link">Inicio</RouterLink>
-          <RouterLink to="/tareas" class="nav-link">Tareas</RouterLink>
-          <RouterLink to="/acerca-de" class="nav-link">Acerca de</RouterLink>
-          <RouterLink :to="user ? '/perfil' : '/iniciar-sesion'" class="nav-link">
+        <nav id="main-nav" :class="{ open: isMenuOpen }">
+          <RouterLink to="/" class="nav-link" @click="closeMenu">Inicio</RouterLink>
+          <RouterLink to="/tareas" class="nav-link" @click="closeMenu">Tareas</RouterLink>
+          <RouterLink to="/acerca-de" class="nav-link" @click="closeMenu">Acerca de</RouterLink>
+          <RouterLink :to="user ? '/perfil' : '/iniciar-sesion'" class="nav-link" @click="closeMenu">
             {{ user ? 'Perfil' : 'Iniciar Sesión' }}
           </RouterLink>
         </nav>
@@ -90,16 +100,48 @@ header .container {
 }
 
 .hamburger {
-  display: none; /* Hidden by default */
-  font-size: 1.5rem;
-  background: none;
-  border: none;
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  background: white;
   cursor: pointer;
+  padding: 10px;
+  gap: 4px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.hamburger:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.hamburger .bar {
+  width: 100%;
+  height: 2px;
+  background: #1f2937;
+  border-radius: 999px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.hamburger .bar:nth-child(1).open {
+  transform: translateY(6px) rotate(45deg);
+}
+.hamburger .bar:nth-child(2).open {
+  opacity: 0;
+}
+.hamburger .bar:nth-child(3).open {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 nav {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 nav.open {
@@ -151,22 +193,31 @@ footer p {
 
 @media (max-width: 768px) {
   .hamburger {
-    display: block; /* Show hamburger on small screens */
+    display: inline-flex;
   }
 
   nav {
-    display: none; /* Hide nav by default on small screens */
+    display: none;
     position: absolute;
-    top: 60px; /* Adjust based on header height */
+    top: 72px;
     left: 0;
     right: 0;
     background: white;
-    z-index: 10;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    flex-direction: column;
+    padding: 12px 16px 16px;
+    gap: 6px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
   }
 
-  main {
-    padding: 20px;
-    padding-bottom: 40px;
+  nav.open {
+    display: flex;
+  }
+
+  .nav-link {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
   }
 }
 </style>
