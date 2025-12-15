@@ -1,6 +1,7 @@
 <!-- filepath: c:\Users\AaronZumarraga\Downloads\tareas\src\views\IniciarSesion.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import PageTitle from '../components/PageTitle.vue'
 import AuthForm from '../components/AuthForm.vue'
 import FormInput from '../components/FormInput.vue'
@@ -9,6 +10,7 @@ import PageSection from '../components/PageSection.vue'
 import { useAuth } from '../service/tareas.service'
 
 const { user, login, register, logout } = useAuth()
+const router = useRouter()
 const isRegistro = ref(false)
 const errorMsg = ref('')
 const isLoading = ref(false)
@@ -22,8 +24,10 @@ const handleSubmit = async () => {
     if (isRegistro.value) {
       if (formData.value.password !== formData.value.confirm) throw new Error('Las contraseñas no coinciden')
       await register(formData.value)
+      router.push('/') // Redirigir a la pestaña de inicio
     } else {
       await login(formData.value.email, formData.value.password)
+      router.push('/') // Redirigir a la pestaña de inicio
     }
   } catch (err: any) {
     errorMsg.value = err.message || 'Error en la operación'
