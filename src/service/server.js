@@ -17,13 +17,13 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  console.log('✅ GET / - Estado del servidor consultado');
+  console.log('GET / - Estado del servidor consultado');
   res.json({ status: 'running' });
 });
 
 // NUEVO: Información de la API
 app.get('/api', (req, res) => {
-  console.log('✅ GET /api - Información de la API consultada');
+  console.log('GET /api - Información de la API consultada');
   res.json({
     name: 'Tareas API',
     version: '1.0',
@@ -40,14 +40,14 @@ app.get('/api/health', async (req, res) => {
     const pool = await getPool();
     const result = await pool.request().query('SELECT 1 AS ok');
     const dbOk = result?.recordset?.[0]?.ok === 1;
-    console.log(`✅ GET /api/health - BD: ${dbOk ? 'OK' : 'DOWN'} (${Date.now() - started}ms)`);
+    console.log(`GET /api/health - BD: ${dbOk ? 'OK' : 'DOWN'} (${Date.now() - started}ms)`);
     return res.json({
       status: 'ok',
       db: dbOk ? 'ok' : 'down',
       latencyMs: Date.now() - started
     });
   } catch (error) {
-    console.error(`❌ GET /api/health - Error en BD: ${error.message}`);
+    console.error(`GET /api/health - Error en BD: ${error.message}`);
     return res.status(503).json({
       status: 'down',
       db: 'down',
@@ -86,7 +86,7 @@ const generateToken = (userId) => {
   };
   const token = Buffer.from(JSON.stringify(payload)).toString('base64');
   activeTokens.set(token, payload);
-  console.log(`🔐 Token generado para usuario ID: ${userId}`);
+  console.log(`Token generado para usuario ID: ${userId}`);
   return token;
 };
 
@@ -94,12 +94,12 @@ const generateToken = (userId) => {
 const verifyToken = (token) => {
   const payload = activeTokens.get(token);
   if (!payload) {
-    console.log(`⚠️ Token no encontrado`);
+    console.log('Token no encontrado');
     return null;
   }
   if (payload.exp < Date.now()) {
     activeTokens.delete(token);
-    console.log(`⚠️ Token expirado para usuario ID: ${payload.userId}`);
+    console.log(`Token expirado para usuario ID: ${payload.userId}`);
     return null;
   }
   return payload;
@@ -109,34 +109,34 @@ const verifyToken = (token) => {
 const validateToken = (req, res, next) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
-    console.log(`❌ Intento de acceso sin token en: ${req.path}`);
+    console.log(`Intento de acceso sin token en: ${req.path}`);
     return res.status(401).json({ message: 'Token requerido' });
   }
   const payload = verifyToken(token);
   if (!payload) {
-    console.log(`❌ Token inválido/expirado en: ${req.path}`);
+    console.log(`Token inválido/expirado en: ${req.path}`);
     return res.status(401).json({ message: 'Token inválido o expirado' });
   }
   req.userId = payload.userId;
-  console.log(`✅ Token válido para usuario ID: ${payload.userId} en: ${req.path}`);
+  console.log(`Token válido para usuario ID: ${payload.userId} en: ${req.path}`);
   next();
 };
 
 // Auth: registro
 app.post('/api/auth/register', async (req, res) => {
   const { nombre, apellido, email, password } = req.body;
-  console.log(`📝 POST /api/auth/register - Intento de registro: ${email}`);
+  console.log(`POST /api/auth/register - Intento de registro: ${email}`);
   
   try {
     if (!nombre || !apellido || !email || !password) {
-      console.log(`⚠️ Campos incompletos en registro: ${email}`);
+      console.log(`Campos incompletos en registro: ${email}`);
       return res.status(400).send('Completa todos los campos');
     }
 
     const pool = await getPool();
     const exists = await pool.request().input('email', email).query('SELECT id FROM Usuarios WHERE email = @email');
     if (exists.recordset.length) {
-      console.log(`⚠️ Email ya registrado: ${email}`);
+      console.log(`Email ya registrado: ${email}`);
       return res.status(409).send('El correo ya está registrado');
     }
 
@@ -152,10 +152,10 @@ app.post('/api/auth/register', async (req, res) => {
         VALUES (@nombre, @apellido, @email, @password)
       `);
 
-    console.log(`✅ Usuario registrado exitosamente - ID: ${inserted.recordset[0].id}, Email: ${email}`);
+    console.log(`Usuario registrado exitosamente - ID: ${inserted.recordset[0].id}, Email: ${email}`);
     res.status(201).json(inserted.recordset[0]);
   } catch (error) {
-    console.error(`❌ Error al registrar usuario ${email}:`, error.message);
+    console.error(`Error al registrar usuario ${email}:`, error.message);
     res.status(500).send('No se pudo registrar, intenta nuevamente');
   }
 });
@@ -163,25 +163,25 @@ app.post('/api/auth/register', async (req, res) => {
 // Auth: login
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  console.log(`🔓 POST /api/auth/login - Intento de login: ${email}`);
+  console.log(`POST /api/auth/login - Intento de login: ${email}`);
   
   try {
     if (!email || !password) {
-      console.log(`⚠️ Credenciales incompletas`);
+      console.log('Credenciales incompletas');
       return res.status(400).send('Correo y contraseña son requeridos');
     }
 
     const pool = await getPool();
     const userResult = await pool.request().input('email', email).query('SELECT * FROM Usuarios WHERE email = @email');
     if (!userResult.recordset.length) {
-      console.log(`⚠️ Usuario no encontrado: ${email}`);
+      console.log(`Usuario no encontrado: ${email}`);
       return res.status(404).send('Usuario no encontrado');
     }
 
     const user = userResult.recordset[0];
     const isValid = verifyPassword(password, user.password);
     if (!isValid) {
-      console.log(`⚠️ Contraseña inválida para: ${email}`);
+      console.log(`Contraseña inválida para: ${email}`);
       return res.status(401).send('Credenciales inválidas');
     }
 
@@ -189,13 +189,13 @@ app.post('/api/auth/login', async (req, res) => {
     const token = generateToken(user.id);
 
     const { password: _, ...safeUser } = user;
-    console.log(`✅ Login exitoso - Usuario ID: ${user.id}, Email: ${email}`);
+    console.log(`Login exitoso - Usuario ID: ${user.id}, Email: ${email}`);
     res.json({
       ...safeUser,
       token
     });
   } catch (error) {
-    console.error(`❌ Error al iniciar sesión para ${email}:`, error.message);
+    console.error(`Error al iniciar sesión para ${email}:`, error.message);
     res.status(500).send('No se pudo iniciar sesión, intenta nuevamente');
   }
 });
@@ -205,7 +205,7 @@ app.post('/api/auth/logout', validateToken, (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (token) {
     activeTokens.delete(token);
-    console.log(`🔐 Logout - Token invalidado para usuario ID: ${req.userId}`);
+    console.log(`Logout - Token invalidado para usuario ID: ${req.userId}`);
   }
   res.json({ message: 'Sesión cerrada' });
 });
@@ -219,14 +219,14 @@ app.get('/api/auth/verify', validateToken, async (req, res) => {
       .query('SELECT id, nombre, apellido, email, fechaCreacion FROM Usuarios WHERE id = @id');
     
     if (!userResult.recordset.length) {
-      console.log(`⚠️ Usuario no encontrado en verificación - ID: ${req.userId}`);
+      console.log(`Usuario no encontrado en verificación - ID: ${req.userId}`);
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    console.log(`✅ Token verificado - Usuario ID: ${req.userId}`);
+    console.log(`Token verificado - Usuario ID: ${req.userId}`);
     res.json(userResult.recordset[0]);
   } catch (error) {
-    console.error(`❌ Error al verificar token para usuario ${req.userId}:`, error.message);
+    console.error(`Error al verificar token para usuario ${req.userId}:`, error.message);
     res.status(500).json({ message: 'Error al verificar token' });
   }
 });
@@ -234,7 +234,7 @@ app.get('/api/auth/verify', validateToken, async (req, res) => {
 // GET tareas
 app.get('/api/tareas', validateToken, async (req, res) => {
   try {
-    console.log(`📋 GET /api/tareas - Usuario ID: ${req.userId}`);
+    console.log(`GET /api/tareas - Usuario ID: ${req.userId}`);
     const pool = await getPool();
     const result = await pool.request().query(`
       SELECT t.id, t.titulo, t.descripcion, t.usuarioId, 
@@ -246,10 +246,10 @@ app.get('/api/tareas', validateToken, async (req, res) => {
       LEFT JOIN Prioridades p ON t.prioridadId = p.id
       ORDER BY t.fechaCreacion DESC
     `);
-    console.log(`✅ ${result.recordset.length} tareas obtenidas`);
+    console.log(`${result.recordset.length} tareas obtenidas`);
     res.json(result.recordset);
   } catch (error) {
-    console.error(`❌ Error al obtener tareas:`, error.message);
+    console.error('Error al obtener tareas:', error.message);
     res.status(500).json({ message: 'Error al obtener tareas', error: error.message });
   }
 });
@@ -257,11 +257,11 @@ app.get('/api/tareas', validateToken, async (req, res) => {
 // POST crear tarea
 app.post('/api/tareas', validateToken, async (req, res) => {
   const { titulo, descripcion, estado, fechaVencimiento, prioridad } = req.body;
-  console.log(`✍️  POST /api/tareas - Nueva tarea: "${titulo}" (Usuario ID: ${req.userId})`);
+  console.log(`POST /api/tareas - Nueva tarea: "${titulo}" (Usuario ID: ${req.userId})`);
   
   try {
     if (!titulo || !estado) {
-      console.log(`⚠️ Campos requeridos faltantes en nueva tarea`);
+      console.log('Campos requeridos faltantes en nueva tarea');
       return res.status(400).json({ message: 'Título y estado son requeridos' });
     }
 
@@ -273,7 +273,7 @@ app.post('/api/tareas', validateToken, async (req, res) => {
       .query('SELECT id FROM Estados WHERE nombre = @nombre');
     
     if (estadoResult.recordset.length === 0) {
-      console.log(`⚠️ Estado no válido: ${estado}`);
+      console.log(`Estado no válido: ${estado}`);
       return res.status(400).json({ message: 'Estado no válido' });
     }
     const estadoId = estadoResult.recordset[0].id;
@@ -342,7 +342,7 @@ app.post('/api/tareas', validateToken, async (req, res) => {
       .input('id', tarea.prioridadId)
       .query('SELECT nombre FROM Prioridades WHERE id = @id');
 
-    console.log(`✅ Tarea creada exitosamente - ID: ${tarea.id}, Título: "${titulo}"`);
+    console.log(`Tarea creada exitosamente - ID: ${tarea.id}, Título: "${titulo}"`);
     res.status(201).json({
       id: tarea.id,
       titulo: tarea.titulo,
@@ -356,7 +356,7 @@ app.post('/api/tareas', validateToken, async (req, res) => {
       fechaCompletacion: tarea.fechaCompletacion
     });
   } catch (error) {
-    console.error(`❌ Error al crear tarea "${titulo}":`, error.message);
+    console.error(`Error al crear tarea "${titulo}":`, error.message);
     res.status(500).json({ message: 'Error al crear tarea', error: error.message });
   }
 });
@@ -365,11 +365,11 @@ app.post('/api/tareas', validateToken, async (req, res) => {
 app.put('/api/tareas/:id', validateToken, async (req, res) => {
   const { id } = req.params;
   const { titulo, descripcion, estado, prioridad, fechaVencimiento } = req.body;
-  console.log(`🔄 PUT /api/tareas/${id} - Actualizar: "${titulo}" (Usuario ID: ${req.userId})`);
+  console.log(`PUT /api/tareas/${id} - Actualizar: "${titulo}" (Usuario ID: ${req.userId})`);
   
   try {
     if (!titulo || !estado) {
-      console.log(`⚠️ Campos requeridos faltantes en actualización`);
+      console.log('Campos requeridos faltantes en actualización');
       return res.status(400).json({ message: 'Título y estado son requeridos' });
     }
 
@@ -381,7 +381,7 @@ app.put('/api/tareas/:id', validateToken, async (req, res) => {
       .query('SELECT id FROM Estados WHERE nombre = @nombre');
     
     if (estadoResult.recordset.length === 0) {
-      console.log(`⚠️ Estado no válido: ${estado}`);
+      console.log(`Estado no válido: ${estado}`);
       return res.status(400).json({ message: 'Estado no válido' });
     }
     const estadoId = estadoResult.recordset[0].id;
@@ -424,7 +424,7 @@ app.put('/api/tareas/:id', validateToken, async (req, res) => {
       `);
 
     if (result.rowsAffected[0] === 0) {
-      console.log(`⚠️ Tarea no encontrada - ID: ${id}`);
+      console.log(`Tarea no encontrada - ID: ${id}`);
       return res.status(404).json({ message: 'Tarea no encontrada' });
     }
 
@@ -442,10 +442,10 @@ app.put('/api/tareas/:id', validateToken, async (req, res) => {
         WHERE t.id = @id
       `);
 
-    console.log(`✅ Tarea actualizada exitosamente - ID: ${id}`);
+    console.log(`Tarea actualizada exitosamente - ID: ${id}`);
     res.status(200).json(updatedTask.recordset[0]);
   } catch (error) {
-    console.error(`❌ Error al actualizar tarea ${id}:`, error.message);
+    console.error(`Error al actualizar tarea ${id}:`, error.message);
     res.status(500).json({ message: 'Error al actualizar tarea', error: error.message });
   }
 });
@@ -453,7 +453,7 @@ app.put('/api/tareas/:id', validateToken, async (req, res) => {
 // DELETE eliminar tarea
 app.delete('/api/tareas/:id', validateToken, async (req, res) => {
   const { id } = req.params;
-  console.log(`🗑️  DELETE /api/tareas/${id} - Eliminar tarea (Usuario ID: ${req.userId})`);
+  console.log(`DELETE /api/tareas/${id} - Eliminar tarea (Usuario ID: ${req.userId})`);
   
   try {
     const pool = await getPool();
@@ -462,21 +462,21 @@ app.delete('/api/tareas/:id', validateToken, async (req, res) => {
       .query('DELETE FROM Tareas WHERE id = @id');
     
     if (result.rowsAffected[0] === 0) {
-      console.log(`⚠️ Tarea no encontrada para eliminar - ID: ${id}`);
+      console.log(`Tarea no encontrada para eliminar - ID: ${id}`);
       return res.status(404).json({ message: 'Tarea no encontrada' });
     }
     
-    console.log(`✅ Tarea eliminada exitosamente - ID: ${id}`);
+    console.log(`Tarea eliminada exitosamente - ID: ${id}`);
     res.status(204).send();
   } catch (error) {
-    console.error(`❌ Error al eliminar tarea ${id}:`, error.message);
+    console.error(`Error al eliminar tarea ${id}:`, error.message);
     res.status(500).json({ message: 'Error al eliminar tarea', error: error.message });
   }
 });
 
 app.listen(PORT, () => {
   console.log(`\n${'='.repeat(60)}`);
-  console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
-  console.log(`📅 Iniciado: ${new Date().toLocaleString()}`);
+  console.log(`Servidor backend corriendo en http://localhost:${PORT}`);
+  console.log(`Iniciado: ${new Date().toLocaleString()}`);
   console.log(`${'='.repeat(60)}\n`);
 });
